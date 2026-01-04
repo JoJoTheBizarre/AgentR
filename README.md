@@ -1,15 +1,3 @@
 # AgentR
 
-A Python agent framework.
-
-## Installation
-
-```bash
-pip install -e .
-```
-
-## Usage
-
-```bash
-python -m agentr
-```
+An End to end Research agent implementation in the work
