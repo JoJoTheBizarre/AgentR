@@ -1,135 +1,82 @@
-"""
-Tests for OpenAIClient.
-These tests require OPENAI_API_KEY to be set.
-"""
-
-import os
 import pytest
-from dotenv import load_dotenv
+from unittest.mock import patch, MagicMock
 
-from src.agentr import OpenAIClient
-from src.agentr.message_types import UserMessage, SystemMessage
+from client import OpenAIClient
+from client.message_types import UserMessage, SystemMessage, AssistantMessage
+
+# ---------------------------------------------------------------------------
+# Helper: fake OpenAI response
+# ---------------------------------------------------------------------------
+
+def make_openai_choice(content="Hello!", tool_calls=None):
+    # Mock OpenAI message object
+    msg = MagicMock()
+    msg.content = content
+    msg.tool_calls = tool_calls
+    return MagicMock(message=msg)
+
+def make_tool_call_response():
+    tool_call_mock = MagicMock()
+    tool_call_mock.id = "call_123"
+    tool_call_mock.type = "function"
+    tool_call_mock.function.name = "echo"
+    tool_call_mock.function.arguments = '{"text":"Hello"}'
+
+    msg_mock = MagicMock()
+    msg_mock.content = None
+    msg_mock.tool_calls = [tool_call_mock]
+
+    return MagicMock(choices=[MagicMock(message=msg_mock)])
 
 
 # ---------------------------------------------------------------------------
-# Test setup
+# Tests using patch
 # ---------------------------------------------------------------------------
 
-load_dotenv(".env.dev")
+@pytest.fixture
+def client():
+    return OpenAIClient(api_key="fake-key", model="mock-model")
 
 
-@pytest.fixture(scope="session")
-def openai_client():
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        pytest.skip("OPENAI_API_KEY not set")
+def test_patch_openai_raw_message(client):
+    system_message = SystemMessage(content="System instructions")
+    user_message = UserMessage(content="Say hello")
 
-    base_url = os.getenv("OPENAI_BASE_URL")
-    return OpenAIClient(api_key=api_key, base_url=base_url)
+    with patch.object(client.client.chat.completions, "create") as mock_create:
+        mock_choice = make_openai_choice(content="Hello from patched OpenAI!")
+        mock_create.return_value = MagicMock(choices=[mock_choice])
 
+        response: AssistantMessage = client.chat(system_message, [user_message], tools=None)
 
-# ---------------------------------------------------------------------------
-# Synchronous tests
-# ---------------------------------------------------------------------------
-
-def test_sync_chat(openai_client):
-    messages = [
-        UserMessage(content="Say hello in one sentence.")
-    ]
-
-    response = openai_client.chat(messages)
-
-    assert "choices" in response
-    assert len(response["choices"]) > 0
-    assert "message" in response["choices"][0]
-    assert isinstance(response["choices"][0]["message"]["content"], str)
-    assert response["choices"][0]["message"]["content"].strip()
+    assert isinstance(response, AssistantMessage)
+    assert response.content == "Hello from patched OpenAI!"
+    assert response.tool_calls is None
 
 
-def test_sync_stream(openai_client):
-    messages = [
-        UserMessage(content="Count from 1 to 5.")
-    ]
+def test_patch_openai_tool_call(client):
+    system_message = SystemMessage(content="System instructions")
+    user_message = UserMessage(content="Call a tool")
 
-    collected_text = ""
+    with patch.object(client.client.chat.completions, "create") as mock_create:
+        tool_call_mock = MagicMock()
+        tool_call_mock.id = "call_123"
+        tool_call_mock.type = "function"
+        tool_call_mock.function.name = "echo"
+        tool_call_mock.function.arguments = '{"text":"Hello"}'
 
-    for chunk in openai_client.stream(messages):
-        assert "choices" in chunk
-        delta = chunk["choices"][0].get("delta", {})
-        if "content" in delta:
-            collected_text += delta["content"]
+        msg_mock = MagicMock()
+        msg_mock.content = None
+        msg_mock.tool_calls = [tool_call_mock]
 
-    assert collected_text.strip()
-    assert any(char.isdigit() for char in collected_text)
+        mock_create.return_value = MagicMock(choices=[MagicMock(message=msg_mock)])
 
+        response: AssistantMessage = client.chat(system_message, [user_message], tools=None)
 
-# ---------------------------------------------------------------------------
-# Asynchronous tests
-# ---------------------------------------------------------------------------
-
-@pytest.mark.asyncio
-async def test_async_chat(openai_client):
-    messages = [
-        UserMessage(content="Say goodbye in one sentence.")
-    ]
-
-    response = await openai_client.achat(messages)
-
-    assert "choices" in response
-    assert len(response["choices"]) > 0
-    assert "message" in response["choices"][0]
-    assert isinstance(response["choices"][0]["message"]["content"], str)
-    assert response["choices"][0]["message"]["content"].strip()
-
-
-@pytest.mark.asyncio
-async def test_async_stream(openai_client):
-    messages = [
-        UserMessage(content="List three colors.")
-    ]
-
-    collected_text = ""
-
-    async for chunk in openai_client.astream(messages):
-        assert "choices" in chunk
-        delta = chunk["choices"][0].get("delta", {})
-        if "content" in delta:
-            collected_text += delta["content"]
-
-    assert collected_text.strip()
-
-
-# ---------------------------------------------------------------------------
-# Compatibility tests
-# ---------------------------------------------------------------------------
-
-def test_backward_compatibility_dict_messages(openai_client):
-    """Test that OpenAIClient still accepts raw dict messages."""
-    messages = [
-        {"role": "system", "content": "You are a helpful assistant."},
-        {"role": "user", "content": "Say hello."}
-    ]
-
-    response = openai_client.chat(messages)
-
-    assert "choices" in response
-    assert len(response["choices"]) > 0
-    assert "message" in response["choices"][0]
-    assert isinstance(response["choices"][0]["message"]["content"], str)
-    assert response["choices"][0]["message"]["content"].strip()
-
-
-def test_mixed_message_types(openai_client):
-    """Test that OpenAIClient accepts mixed Message and dict types."""
-    messages = [
-        {"role": "system", "content": "You are a helpful assistant."},
-        UserMessage(content="Say hello.")
-    ]
-
-    response = openai_client.chat(messages)
-
-    assert "choices" in response
-    assert len(response["choices"]) > 0
-    assert "message" in response["choices"][0]
-    assert isinstance(response["choices"][0]["message"]["content"], str)
-    assert response["choices"][0]["message"]["content"].strip()
+    assert isinstance(response, AssistantMessage)
+    assert response.content is None
+    assert response.tool_calls is not None
+    assert len(response.tool_calls) == 1
+    tc = response.tool_calls[0]
+    assert tc.id == "call_123"
+    assert tc.function.name == "echo"
+    assert tc.function.arguments == '{"text":"Hello"}'
