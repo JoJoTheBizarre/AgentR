@@ -1,0 +1,25 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '^README\.md$'
+      - id: end-of-file-fixer
+      - id: check-added-large-files
+        exclude : '^tests/samples/.*'
+      - id: check-case-conflict
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.10
+    hooks:
+      - id: ruff-check
+        args: [ --fix ]
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: check-dependency-order
+        name: Check pyproject.toml dependency order
+        entry: uv run python ./scripts/check_dependencies_order.py
+        language: system
+        types: [toml]
+        pass_filenames: false
