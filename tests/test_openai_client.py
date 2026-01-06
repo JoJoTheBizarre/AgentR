@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import patch, MagicMock
 
-from client import OpenAIClient
-from client.message_types import UserMessage, SystemMessage, AssistantMessage
+from agentr.client.openai import OpenAIClient
+from agentr.core.messages import UserMessage, SystemMessage, AssistantMessage
 
 # ---------------------------------------------------------------------------
 # Helper: fake OpenAI response
