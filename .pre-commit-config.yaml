@@ -14,12 +14,3 @@ repos:
       - id: ruff-check
         args: [ --fix ]
       - id: ruff-format
-
-  - repo: local
-    hooks:
-      - id: check-dependency-order
-        name: Check pyproject.toml dependency order
-        entry: uv run python ./scripts/check_dependencies_order.py
-        language: system
-        types: [toml]
-        pass_filenames: false

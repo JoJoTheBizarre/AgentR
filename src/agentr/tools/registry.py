@@ -5,7 +5,8 @@ This module provides a ToolRegistry class that can store multiple tools,
 retrieve them by name, and convert them to OpenAI tool schemas.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
+
 from langchain_core.tools import BaseTool, StructuredTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
@@ -20,16 +21,16 @@ class ToolRegistry:
     3. Manage tool lifecycle
 
     Args:
-        tools: Optional list of tools to initialize the registry with.
+        tools: list of tools or None to initialize the registry with.
     """
 
-    def __init__(self, tools: Optional[List[Union[BaseTool, StructuredTool]]] = None):
-        self._tools: Dict[str, Union[BaseTool, StructuredTool]] = {}
+    def __init__(self, tools: list[BaseTool | StructuredTool] | None = None) -> None:
+        self._tools: dict[str, BaseTool | StructuredTool] = {}
         if tools:
             for tool in tools:
                 self.register(tool)
 
-    def register(self, tool: Union[BaseTool, StructuredTool]) -> None:
+    def register(self, tool: BaseTool | StructuredTool) -> None:
         """
         Register a tool in the registry.
 
@@ -39,7 +40,7 @@ class ToolRegistry:
         Raises:
             ValueError: If tool lacks a name attribute or if name is already registered.
         """
-        if not hasattr(tool, 'name') or not tool.name:
+        if not hasattr(tool, "name") or not tool.name:
             raise ValueError(f"Tool must have a 'name' attribute: {tool}")
 
         if tool.name in self._tools:
@@ -47,7 +48,7 @@ class ToolRegistry:
 
         self._tools[tool.name] = tool
 
-    def get_tool(self, name: str) -> Union[BaseTool, StructuredTool]:
+    def get_tool(self, name: str) -> BaseTool | StructuredTool:
         """
         Get a tool by name.
 
@@ -64,20 +65,19 @@ class ToolRegistry:
             raise KeyError(f"Tool '{name}' not found in registry")
         return self._tools[name]
 
-
-    def get_openai_tools(self) -> List[Dict[str, Any]]:
+    def get_openai_tools(self) -> list[dict[str, Any]]:
         """
         Convert all registered tools to OpenAI tool schema format.
 
         Returns:
-            List of tool definitions in OpenAI tool schema format.
+            list of tool definitions in OpenAI tool schema format.
         """
         openai_tools = []
         for tool in self._tools.values():
             openai_tools.append(convert_to_openai_tool(tool))
         return openai_tools
 
-    def get_openai_tool(self, name: str) -> Dict[str, Any]:
+    def get_openai_tool(self, name: str) -> dict[str, Any]:
         """
         Get OpenAI tool schema for a specific tool by name.
 
@@ -93,11 +93,11 @@ class ToolRegistry:
         tool = self.get_tool(name)
         return convert_to_openai_tool(tool)
 
-    def get_all_tools(self) -> List[Union[BaseTool, StructuredTool]]:
+    def get_all_tools(self) -> list[BaseTool | StructuredTool]:
         """Return list of all registered tool objects."""
         return list(self._tools.values())
 
-    def list_tools(self) -> List[str]:
+    def list_tools(self) -> list[str]:
         """Return list of registered tool names."""
         return list(self._tools.keys())
 
