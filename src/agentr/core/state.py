@@ -1,9 +1,17 @@
+from enum import StrEnum
 from typing import Any, NotRequired, TypedDict
 
 from .messages import Message
 
 
-class ResearchAgentState(TypedDict, total=False):
+class NodeType(StrEnum):
+    RESEARCH = "research"
+    TOOL = "tool"
+    SYNTHESIZE = "synthesize"
+    ORCHESTRATOR = "orchestrator"
+
+
+class AgentState(TypedDict, total=False):
     """State container for the research agent.
 
     Attributes:
@@ -45,8 +53,8 @@ class ResearchAgentState(TypedDict, total=False):
     message_history: list[Message]
     research_history: list[dict[str, Any]]
     response: NotRequired[str]
-    current_iteration: int | None
-    max_iterations: NotRequired[int]
+    current_iteration: int
+    max_iterations: int
     should_synthesize: bool
     should_research: bool
     subtasks: list[dict[str, Any]]

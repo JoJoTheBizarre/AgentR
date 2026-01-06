@@ -1,80 +1,67 @@
 """OpenAI LLM client implementation."""
 
-import os
-from typing import Any, AsyncIterator, Dict, Iterator, cast, List, Optional
+from collections.abc import AsyncIterator, Iterator
+from typing import Any, cast
 
-from openai import OpenAI, AsyncOpenAI
-from openai.types.chat import (
-    ChatCompletion,
-    ChatCompletionMessageParam,
-)
+from openai import AsyncOpenAI, OpenAI
+from openai.types.chat import ChatCompletion, ChatCompletionMessageParam
 
-from .base import LLMClient
-from ..core.messages import (
-    Message,
-    SystemMessage,
-    UserMessage,
+from agentr.client.base import LLMClient
+from agentr.core.messages import (
     AssistantMessage,
-    ToolResultMessage,
-    ToolCall,
     FunctionCall,
+    Message,
     Role,
+    SystemMessage,
+    ToolCall,
+    ToolResultMessage,
+    UserMessage,
 )
 
 
 class OpenAIClient(LLMClient):
     """OpenAI LLM client implementation."""
 
-    def __init__(
-        self,
-        api_key: Optional[str] = None,
-        model: Optional[str] = None,
-        **kwargs: Any,
-    ) -> None:
-        self.model: Optional[str] = model or os.getenv("OPENAI_MODEL")
+    def __init__(self, api_key: str | None = None, **kwargs: object) -> None:
+        """
+        Initialize OpenAI client.
 
+        Args:
+            api_key: Optional OpenAI API key.
+            kwargs: Additional keyword arguments for OpenAI client.
+        """
         self.client: OpenAI = OpenAI(api_key=api_key, **kwargs)
         self.async_client: AsyncOpenAI = AsyncOpenAI(api_key=api_key, **kwargs)
 
-    # ------------------------------------------------------------------
-    # Model resolution
-    # ------------------------------------------------------------------
-
-    def _get_model(self, model_override: Optional[str]) -> str:
-        model: Optional[str] = model_override or self.model
-        if not model:
-            raise ValueError(
-                "No OpenAI model specified. "
-                "Pass `model` in the call, pass `model` to OpenAIClient, "
-                "or set OPENAI_MODEL env variable."
-            )
-        return model
-
-    # ------------------------------------------------------------------
-    # OpenAI → Custom message
-    # ------------------------------------------------------------------
-
     @staticmethod
     def _customize_response(response: ChatCompletion) -> AssistantMessage:
+        """
+        Convert OpenAI chat response into an AssistantMessage.
+
+        Args:
+            response: OpenAI ChatCompletion response.
+
+        Returns:
+            AssistantMessage containing the assistant's content and any tool calls.
+        """
         if not response.choices:
             raise ValueError("No choices in response")
 
         msg = response.choices[0].message
 
-        tool_calls: Optional[List[ToolCall]] = None
+        tool_calls: list[ToolCall] | None = None
         if msg.tool_calls:
-            tool_calls = []
-            for tc in msg.tool_calls:
-                tool_calls.append(
-                    ToolCall(
-                        id=tc.id,
-                        type=tc.type,  # type: ignore
-                        function=FunctionCall(
-                            name=tc.function.name,  # type: ignore
-                            arguments=tc.function.arguments,  # type: ignore
-                        ),
-                    )
+            tool_calls = [
+                ToolCall(
+                    id=tc.id,
+                    type=tc.type,  # type: ignore
+                    function=FunctionCall(
+                        name=tc.function.name,  # type: ignore
+                        arguments=tc.function.arguments,  # type: ignore
+                    ),
                 )
+                for tc in msg.tool_calls
+            ]
 
         return AssistantMessage(
             role=Role.ASSISTANT,
@@ -82,22 +69,24 @@ class OpenAIClient(LLMClient):
             tool_calls=tool_calls,
         )
 
-    # ------------------------------------------------------------------
-    # Custom → OpenAI messages
-    # ------------------------------------------------------------------
-
     @staticmethod
     def _to_openai_messages(
         system_message: SystemMessage,
-        messages: List[Message],
-    ) -> List[ChatCompletionMessageParam]:
+        messages: list[Message],
+    ) -> list[ChatCompletionMessageParam]:
         """
         Convert custom message types into OpenAI-compatible chat messages.
+
+        Args:
+            system_message: The system message to start the conversation.
+            messages: List of Message objects (user, assistant, or tool results).
+
+        Returns:
+            A list of ChatCompletionMessageParam for OpenAI.
         """
+        openai_messages: list[ChatCompletionMessageParam] = []
 
-        openai_messages: List[ChatCompletionMessageParam] = []
-
-        # ---- system message (must be first)
+        # Add system message first
         openai_messages.append(
             {
                 "role": Role.SYSTEM.value,
@@ -106,9 +95,6 @@ class OpenAIClient(LLMClient):
         )
 
         for msg in messages:
-            # -------------------------
-            # User message
-            # -------------------------
             if isinstance(msg, UserMessage):
                 openai_messages.append(
                     {
@@ -117,9 +103,6 @@ class OpenAIClient(LLMClient):
                     }
                 )
 
-            # -------------------------
-            # Assistant message
-            # -------------------------
             elif isinstance(msg, AssistantMessage):
                 payload: dict[str, Any] = {
                     "role": Role.ASSISTANT.value,
@@ -139,13 +122,8 @@ class OpenAIClient(LLMClient):
                         for tc in msg.tool_calls
                     ]
 
-                openai_messages.append(
-                    cast(ChatCompletionMessageParam, payload)
-                )
+                openai_messages.append(cast(ChatCompletionMessageParam, payload))
 
-            # -------------------------
-            # Tool result message
-            # -------------------------
             elif isinstance(msg, ToolResultMessage):
                 openai_messages.append(
                     {
@@ -156,30 +134,40 @@ class OpenAIClient(LLMClient):
                 )
 
             else:
-                # Should be unreachable if Message union is exhaustive
                 raise TypeError(f"Unsupported message type: {type(msg)}")
 
         return openai_messages
 
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
-
     def chat(
         self,
         system_message: SystemMessage,
-        messages: List[Message],
-        tools: Optional[List[Dict[str, Any]]] = None,
-        **kwargs: Any,
+        messages: list[Message],
+        tools: list[dict[str, Any]] | None = None,
+        **kwargs: object,
     ) -> AssistantMessage:
-        model: str = self._get_model(kwargs.pop("model", None))
+        """
+        Perform a synchronous chat with the OpenAI model.
+
+        Args:
+            system_message: SystemMessage to start the conversation.
+            messages: List of Message objects.
+            tools: Optional list of tools/functions for the model.
+            kwargs: Additional keyword arguments for the OpenAI API.
+
+        Returns:
+            AssistantMessage with the model's response.
+        """
+        model: str = kwargs.pop("model", None)
+        if model is None:
+            raise ValueError("Model must be specified for OpenAIClient chat")
 
         openai_messages = self._to_openai_messages(system_message, messages)
+        if tools:
+            kwargs["tools"] = tools
 
         response: ChatCompletion = self.client.chat.completions.create(
             model=model,
             messages=openai_messages,
-            tools=tools,
             **kwargs,
         )
 
@@ -188,26 +176,44 @@ class OpenAIClient(LLMClient):
     async def achat(
         self,
         system_message: SystemMessage,
-        messages: List[Message],
-        tools: Optional[List[Dict[str, Any]]] = None,
-        **kwargs: Any,
+        messages: list[Message],
+        tools: list[dict[str, Any]] | None = None,
+        **kwargs: object,
     ) -> AssistantMessage:
+        """
+        Async chat not implemented for OpenAIClient.
+
+        Raises:
+            NotImplementedError
+        """
         raise NotImplementedError("Async chat not implemented for OpenAIClient")
 
     def stream(
         self,
         system_message: SystemMessage,
-        messages: List[Message],
-        tools: Optional[List[Dict[str, Any]]] = None,
-        **kwargs: Any,
-    ) -> Iterator[Dict[str, Any]]:
+        messages: list[Message],
+        tools: list[dict[str, Any]] | None = None,
+        **kwargs: object,
+    ) -> Iterator[dict[str, Any]]:
+        """
+        Streaming chat not implemented for OpenAIClient.
+
+        Raises:
+            NotImplementedError
+        """
         raise NotImplementedError("Streaming not implemented for OpenAIClient")
 
     async def astream(
         self,
         system_message: SystemMessage,
-        messages: List[Message],
-        tools: Optional[List[Dict[str, Any]]] = None,
-        **kwargs: Any,
-    ) -> AsyncIterator[Dict[str, Any]]:
+        messages: list[Message],
+        tools: list[dict[str, Any]] | None = None,
+        **kwargs: object,
+    ) -> AsyncIterator[dict[str, Any]]:
+        """
+        Async streaming chat not implemented for OpenAIClient.
+
+        Raises:
+            NotImplementedError
+        """
         raise NotImplementedError("Async streaming not implemented for OpenAIClient")

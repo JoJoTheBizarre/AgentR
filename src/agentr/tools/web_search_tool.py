@@ -6,85 +6,54 @@ with the LLM client. The tools follow OpenAI's tool schema format.
 """
 
 import os
-from typing import Any, Dict, List
-from pydantic import BaseModel, Field
-from tavily import TavilyClient, AsyncTavilyClient
+from typing import Any
+
 from langchain_core.tools import StructuredTool
+from pydantic import BaseModel, Field
+from tavily import AsyncTavilyClient, TavilyClient
 
-from .types import InformationSource, InformationResult
+from agentr.prompts import (
+    WEB_SEARCH_TOOL_DESCRIPTION,
+    WEB_SEARCH_TOOL_NAME,
+)
 
-# ---------------------------------------------------------------------------
-# Constants for tool
-# ---------------------------------------------------------------------------
+from .types import InformationResult, InformationSource, SourceType
 
-TOOL_NAME = "web_search"
-TOOL_DESCRIPTION = "Search the web using Tavily and return sources with content."
-
-# ---------------------------------------------------------------------------
-# Input schema
-# ---------------------------------------------------------------------------
 
 class SearchInput(BaseModel):
     """Input schema for the web search tool."""
-    query: str = Field(
-        ...,
-        description="The search query to execute",
-        min_length=1,
-        max_length=500,
-    )
 
-# ---------------------------------------------------------------------------
-# Output schema
-# ---------------------------------------------------------------------------
+    query: str = Field(..., description="The search query to execute")
 
-# Using shared types from .types module:
-# - InformationSource: source + content + timestamp
-# - InformationResult: container for multiple sources with optional summary
-
-# For backward compatibility, alias the types
-WebSearchItem = InformationSource
-WebSearchResult = InformationResult
-
-# ---------------------------------------------------------------------------
-# Tavily client initialization
-# ---------------------------------------------------------------------------
 
 def get_tavily_client() -> TavilyClient:
     """Initialize and return a Tavily client."""
     api_key = os.getenv("TAVILY_API_KEY")
     if not api_key:
-        raise ValueError(
-            "TAVILY_API_KEY environment variable is not set. "
-        )
+        raise ValueError("TAVILY_API_KEY environment variable is not set. ")
     return TavilyClient(api_key=api_key)
+
 
 def get_async_tavily_client() -> AsyncTavilyClient:
     """Initialize and return an async Tavily client."""
     api_key = os.getenv("TAVILY_API_KEY")
     if not api_key:
-        raise ValueError(
-            "TAVILY_API_KEY environment variable is not set. "
-        )
+        raise ValueError("TAVILY_API_KEY environment variable is not set. ")
     return AsyncTavilyClient(api_key=api_key)
 
-# ---------------------------------------------------------------------------
-# Helper function to normalize Tavily response
-# ---------------------------------------------------------------------------
 
-def _format_tavily_response(response: Dict[str, Any]) -> InformationResult:
+def _format_tavily_response(response: dict[str, Any]) -> InformationResult:
     results = response.get("results", [])
     sources = [
         InformationSource(
+            type=SourceType.WEB_SEARCH,
             source=item.get("url", ""),
-            content=item.get("content", "")
+            content=item.get("content", ""),
         )
         for item in results
     ]
     return InformationResult(sources=sources)
 
-# ---------------------------------------------------------------------------
-# Sync and async search functions
-# ---------------------------------------------------------------------------
 
 def web_search_sync(query: str) -> InformationResult:
     """Synchronous web search using Tavily API."""
@@ -92,19 +61,17 @@ def web_search_sync(query: str) -> InformationResult:
     response = client.search(query=query)
     return _format_tavily_response(response)
 
+
 async def web_search_async(query: str) -> InformationResult:
     """Asynchronous web search using Tavily API."""
     client = get_async_tavily_client()
     response = await client.search(query=query)
     return _format_tavily_response(response)
 
-# ---------------------------------------------------------------------------
-# StructuredTool definition
-# ---------------------------------------------------------------------------
 
 web_search_tool = StructuredTool.from_function(
-    name=TOOL_NAME,
-    description=TOOL_DESCRIPTION,
+    name=WEB_SEARCH_TOOL_NAME,
+    description=WEB_SEARCH_TOOL_DESCRIPTION,
     args_schema=SearchInput,
     func=web_search_sync,
     coroutine=web_search_async,

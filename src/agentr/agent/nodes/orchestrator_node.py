@@ -6,7 +6,7 @@ from agentr.core.state import AgentState
 from agentr.tools import ToolRegistry
 
 
-class ResearchNode(BaseNode):
+class OrchestratorNode(BaseNode[AgentState, AgentState]):
     def __init__(
         self, name: str, llm_client: LLMClient, tool_registry: ToolRegistry
     ) -> None:
@@ -17,5 +17,5 @@ class ResearchNode(BaseNode):
     async def _execute(
         self, state: AgentState, config: RunnableConfig | None = None
     ) -> AgentState:
-        """Perform research using the LLM and tools."""
+        """Orchestrates by planning steps and decomposing the query."""
         return state

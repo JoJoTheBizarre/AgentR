@@ -1,9 +1,9 @@
 """Abstract base class for LLM clients."""
 
 from abc import ABC, abstractmethod
-from typing import Any, AsyncIterator, Dict, Iterator, List, Optional
+from collections.abc import AsyncIterator, Iterator
 
-from ..core.messages import (
+from agentr.core.messages import (
     AssistantMessage,
     Message,
     SystemMessage,
@@ -17,9 +17,9 @@ class LLMClient(ABC):
     def chat(
         self,
         system_message: SystemMessage,
-        messages: List[Message],
-        tools: Optional[List[Dict[str, Any]]] = None,
-        **kwargs: Any,
+        messages: list[Message],
+        tools: list[dict[str, object]] | None = None,
+        **kwargs: object,
     ) -> AssistantMessage:
         """
         Synchronous chat completion.
@@ -39,9 +39,9 @@ class LLMClient(ABC):
     async def achat(
         self,
         system_message: SystemMessage,
-        messages: List[Message],
-        tools: Optional[List[Dict[str, Any]]] = None,
-        **kwargs: Any,
+        messages: list[Message],
+        tools: list[dict[str, object]] | None = None,
+        **kwargs: object,
     ) -> AssistantMessage:
         """
         Asynchronous chat completion.
@@ -61,10 +61,10 @@ class LLMClient(ABC):
     def stream(
         self,
         system_message: SystemMessage,
-        messages: List[Message],
-        tools: Optional[List[Dict[str, Any]]] = None,
-        **kwargs: Any,
-    ) -> Iterator[Dict[str, Any]]:
+        messages: list[Message],
+        tools: list[dict[str, object]] | None = None,
+        **kwargs: object,
+    ) -> Iterator[dict[str, object]]:
         """
         Synchronous streaming chat completion.
 
@@ -83,10 +83,10 @@ class LLMClient(ABC):
     async def astream(
         self,
         system_message: SystemMessage,
-        messages: List[Message],
-        tools: Optional[List[Dict[str, Any]]] = None,
-        **kwargs: Any,
-    ) -> AsyncIterator[Dict[str, Any]]:
+        messages: list[Message],
+        tools: list[dict[str, object]] | None = None,
+        **kwargs: object,
+    ) -> AsyncIterator[dict[str, object]]:
         """
         Asynchronous streaming chat completion.
 

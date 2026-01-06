@@ -43,5 +43,10 @@ strict = true
 [tool.ruff]
 line-length = 88
 target-version = "py312"
-select = ["E", "F", "I", "B", "W", "Q", "C", "N", "UP", "YTT", "ANN", "S", "TCH", "RUF"]
-ignore = ["ANN101", "ANN102", "TCH"]
+
+[tool.ruff.lint]
+# Select which rule codes to check
+select = ["E", "F", "I", "B", "W", "Q", "C", "N", "UP", "YTT", "ANN", "S", "RUF"]
+
+# Ignore specific rules (removed ANN101, ANN102, TCH since they no longer exist)
+ignore = []
