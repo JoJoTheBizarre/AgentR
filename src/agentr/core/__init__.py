@@ -1,8 +1,6 @@
-"""Client module for LLM client implementations and message types."""
+"""Core types and state definitions."""
 
-from .llm_client import LLMClient
-from .openai_client import OpenAIClient
-from .message_types import (
+from .messages import (
     SystemMessage,
     UserMessage,
     AssistantMessage,
@@ -12,10 +10,10 @@ from .message_types import (
     Message,
     Role,
 )
+from .state import ResearchAgentState
+from .nodes import NodeType
 
 __all__ = [
-    "LLMClient",
-    "OpenAIClient",
     "SystemMessage",
     "UserMessage",
     "AssistantMessage",
@@ -24,4 +22,6 @@ __all__ = [
     "FunctionCall",
     "Message",
     "Role",
+    "ResearchAgentState",
+    "NodeType",
 ]

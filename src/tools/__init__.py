@@ -1,1 +1,0 @@
-"""Tools module for tool definitions and execution."""

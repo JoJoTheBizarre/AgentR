@@ -1,7 +1,7 @@
 """OpenAI LLM client implementation."""
 
 import os
-from typing import Any, AsyncIterator, Iterator, cast, List, Optional
+from typing import Any, AsyncIterator, Dict, Iterator, cast, List, Optional
 
 from openai import OpenAI, AsyncOpenAI
 from openai.types.chat import (
@@ -9,8 +9,8 @@ from openai.types.chat import (
     ChatCompletionMessageParam,
 )
 
-from .llm_client import LLMClient
-from .message_types import (
+from .base import LLMClient
+from ..core.messages import (
     Message,
     SystemMessage,
     UserMessage,
@@ -169,7 +169,7 @@ class OpenAIClient(LLMClient):
         self,
         system_message: SystemMessage,
         messages: List[Message],
-        tools: Any,
+        tools: Optional[List[Dict[str, Any]]] = None,
         **kwargs: Any,
     ) -> AssistantMessage:
         model: str = self._get_model(kwargs.pop("model", None))
@@ -187,21 +187,27 @@ class OpenAIClient(LLMClient):
 
     async def achat(
         self,
+        system_message: SystemMessage,
         messages: List[Message],
+        tools: Optional[List[Dict[str, Any]]] = None,
         **kwargs: Any,
-    ) -> dict[str, Any]:
+    ) -> AssistantMessage:
         raise NotImplementedError("Async chat not implemented for OpenAIClient")
 
     def stream(
         self,
+        system_message: SystemMessage,
         messages: List[Message],
+        tools: Optional[List[Dict[str, Any]]] = None,
         **kwargs: Any,
-    ) -> Iterator[dict[str, Any]]:
+    ) -> Iterator[Dict[str, Any]]:
         raise NotImplementedError("Streaming not implemented for OpenAIClient")
 
     async def astream(
         self,
+        system_message: SystemMessage,
         messages: List[Message],
+        tools: Optional[List[Dict[str, Any]]] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[dict[str, Any]]:
+    ) -> AsyncIterator[Dict[str, Any]]:
         raise NotImplementedError("Async streaming not implemented for OpenAIClient")
