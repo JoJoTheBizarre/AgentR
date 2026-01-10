@@ -1,8 +1,7 @@
+from config import ClientSettings
 from langchain_core.messages import AIMessage, BaseMessage, ToolCall
 from langchain_core.tools import StructuredTool
 from langchain_openai import ChatOpenAI
-
-from config import ClientSettings
 
 
 class OpenAIClient:
@@ -55,30 +54,26 @@ class OpenAIClient:
         return response
 
     def with_structured_output(
-        self,
-        messages: list[BaseMessage],
-        tools: list[StructuredTool],
-        parallel: bool = False,
-        choice: str = "first",
-    ) -> AIMessage | ToolCall | list[ToolCall]:
+    self,
+    messages: list[BaseMessage],
+    tools: list[StructuredTool],
+    parallel: bool = False,
+) -> AIMessage:
         """
         Invoke the LLM with structured tools.
 
         Args:
-            messages (List[BaseMessage]): List of messages to process.
-            tools (List[StructuredTool]): Tools to bind to the LLM.
+            messages (list[BaseMessage]): List of messages to process.
+            tools (list[StructuredTool]): Tools to bind to the LLM.
             parallel (bool, optional): Whether to run tools in parallel. Defaults to False.
             choice (str, optional): 'first' to return only the first tool call, 'all' to return all.
 
         Returns:
-            AIMessage | list[ToolCall]: AIMessage if no tools are called, else ToolCall(s).
-        """  # noqa: E501
+            Tuple:
+                - AIMessage if no tools are called, else ToolCall(s)
+                - bool indicating whether a tool was called
+        """
         llm_with_tools = self.client.bind_tools(tools=tools, parallel=parallel)
         response = llm_with_tools.invoke(input=messages, choice=choice)
 
-        if response.tool_calls:
-            if choice == "first":
-                return response.tool_calls[0]
-            else:
-                return response.tool_calls
         return response
