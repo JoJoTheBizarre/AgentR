@@ -40,7 +40,7 @@ def initialize_agent(
         # Set Tavily API key in environment if loaded from config
         if client_config.tavily_api_key and not os.getenv("TAVILY_API_KEY"):
             os.environ["TAVILY_API_KEY"] = client_config.tavily_api_key
-            print(f"✓ Tavily API key loaded from configuration")
+            print("✓ Tavily API key loaded from configuration")
 
     except Exception as e:
         print(f"⚠  Configuration error: {e}")

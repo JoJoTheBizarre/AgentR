@@ -1,6 +1,6 @@
 from config import ClientSettings
 from graph.exceptions import ClientInitializationError
-from langchain_core.messages import AIMessage, BaseMessage, ToolCall
+from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.tools import StructuredTool
 from langchain_openai import ChatOpenAI
 
@@ -39,7 +39,11 @@ class OpenAIClient:
                 "You must provide either client_config or both api_key and model."
             )
 
-        self.client = ChatOpenAI(model=self.model, api_key=str(self.api_key))  # pyright: ignore[reportArgumentType]
+        self.client = ChatOpenAI(
+            model=self.model,
+            api_key=str(self.api_key),
+            base_url=self.api_url,
+        )  # pyright: ignore[reportArgumentType]
 
     def chat(self, messages: list[BaseMessage]) -> AIMessage:
         """
@@ -59,8 +63,7 @@ class OpenAIClient:
         messages: list[BaseMessage],
         tools: list[StructuredTool],
         parallel: bool = False,
-        choice: str = "first",
-    ) -> AIMessage | ToolCall | list[ToolCall]:
+    ) -> AIMessage:
         """
         Invoke the LLM with structured tools.
 
@@ -69,16 +72,13 @@ class OpenAIClient:
             tools (list[StructuredTool]): Tools to bind to the LLM.
             parallel (bool, optional): Whether to run tools in parallel.
                 Defaults to False.
-            choice (str, optional): 'first' to return only the first tool call,
-                'all' to return all. Defaults to "first".
 
         Returns:
-            Union[AIMessage, ToolCall, list[ToolCall]]:
-                - AIMessage if no tools are called
-                - ToolCall if choice='first' and tools are called
-                - list[ToolCall] if choice='all' and tools are called
+            AIMessage: The response from the model with potential tool calls.
         """
-        llm_with_tools = self.client.bind_tools(tools=tools, parallel=parallel)
-        response = llm_with_tools.invoke(input=messages, choice=choice)
+        llm_with_tools = self.client.bind_tools(
+            tools=tools, parallel_tool_calls=parallel
+        )
+        response = llm_with_tools.invoke(input=messages)
 
         return response
