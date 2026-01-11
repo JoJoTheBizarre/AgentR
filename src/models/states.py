@@ -26,6 +26,7 @@ class AgentState(TypedDict):
     message_history: list[BaseMessage]
 
     should_research: bool
+    should_continue: bool
     current_iteration: int
     max_iteration: int
 
@@ -34,6 +35,7 @@ class AgentState(TypedDict):
 
     research_id: str
     research_findings: Sources
+    researcher_history: list[BaseMessage]
 
 
 class PreprocessorState(TypedDict):
@@ -53,9 +55,10 @@ class OrchestratorState(TypedDict):
 
 
 class ResearcherState(TypedDict):
-    active_subtasks: list[str]
+    planned_subtasks: NotRequired[list[str]]
 
     current_iteration: int
-
+    should_continue: bool
     research_id: str
-    research_findings: NotRequired[Sources]
+    researcher_history: list[BaseMessage]
+    message_history: list[BaseMessage]
