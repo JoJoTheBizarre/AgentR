@@ -34,5 +34,4 @@ class BaseNode(ABC):
         try:
             return self._execute(*args, **kwargs)
         except Exception as e:
-            # Re-raise NodeExecutionError to include node name context
             raise NodeExecutionError(self.node_name, e) from e

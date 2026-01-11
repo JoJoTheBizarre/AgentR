@@ -6,9 +6,10 @@ from langchain_core.messages import AIMessage, BaseMessage, SystemMessage, ToolM
 from langchain_core.tools import StructuredTool
 from models.states import OrchestratorState
 from prompt_templates import SYS_ORCHESTRATOR
-from tools import ShouldResearch, research_tool_factory
+from tools import ShouldResearch, ToolManager
 
 from .nodes import NodeName
+from .exceptions import NodeInputError, NodeOutputError, StateError
 
 
 class OrchestratorNode(BaseNode):
@@ -32,7 +33,7 @@ class OrchestratorNode(BaseNode):
     @staticmethod
     def _research_factory() -> StructuredTool:
         """Return a ready-to-use research tool."""
-        return research_tool_factory()
+        return ToolManager.get_structured_tool("research_tool")
 
     @staticmethod
     def _is_tool_call(response: AIMessage) -> bool:
@@ -74,7 +75,8 @@ class OrchestratorNode(BaseNode):
             Updated state with research decision
 
         Raises:
-            ValueError: If research_id or text response is missing
+            NodeInputError: If research_id is missing in tool call
+            NodeOutputError: If neither tool calls nor text response produced by the LLM
         """
         response = self.client.with_structured_output(
             messages=messages,
@@ -85,7 +87,10 @@ class OrchestratorNode(BaseNode):
             tool_call = response.tool_calls[0]
             research_id = tool_call.get("id")
             if not research_id:
-                raise ValueError("Research id not provided in tool call")
+                raise NodeInputError(
+                    node_name=self.node_name,
+                    message="Research id not provided in tool call"
+                )
 
             planned_subtasks = ShouldResearch(**tool_call["args"])
             return OrchestratorState(
@@ -97,7 +102,10 @@ class OrchestratorNode(BaseNode):
 
         text_response = response.content
         if not text_response:
-            raise ValueError("Neither Tool calls nor text response produced by the LLM")
+            raise NodeOutputError(
+                node_name=self.node_name,
+                message="Neither Tool calls nor text response produced by the LLM"
+            )
 
         return OrchestratorState(
             message_history=[*state.get("message_history", []), response],
@@ -118,16 +126,17 @@ class OrchestratorNode(BaseNode):
             Updated state with synthesized response
 
         Raises:
-            ValueError: If research findings or ID are missing
+            StateError: If research findings or ID are missing
         """
         research_findings = state.get("research_findings")
         research_id = state.get("research_id")
 
         if not research_findings or not research_id:
-            raise ValueError(
-                f"Missing required data - "
+            raise StateError(
+                message=f"Missing required data - "
                 f"research_findings: {bool(research_findings)}, "
-                f"research_id: {bool(research_id)}"
+                f"research_id: {bool(research_id)}",
+                state_field=None
             )
 
         tool_message = ToolMessage(
@@ -139,7 +148,10 @@ class OrchestratorNode(BaseNode):
 
         response_content = response.content
         if not response_content:
-            raise ValueError("Empty response content from LLM after research")
+            raise NodeOutputError(
+                node_name=self.node_name,
+                message="Empty response content from LLM after research"
+            )
 
         return OrchestratorState(
             message_history=[*state.get("message_history", []), tool_message, response],

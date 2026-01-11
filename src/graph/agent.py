@@ -3,8 +3,9 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode
 from models.states import AgentState
-from tools.web_search_tool import web_search_factory
+from tools import ToolManager
 
+from .exceptions import ResponseError
 from .nodes import NodeName
 from .orchestrator import OrchestratorNode
 from .process_query import QueryProcessor
@@ -32,11 +33,14 @@ class AgentR:
             researcher_history=[],
         )
 
-    def invoke(self, request: str):
+    def invoke(self, request: str) -> str:
         initial_state = self._build_initial_state(request)
         agent_response = self.graph.invoke(initial_state)
-        string_response = agent_response.get("response")
-        return string_response
+        literal_response = agent_response.get("response")
+        if literal_response:
+            return literal_response
+        else:
+            raise ResponseError("Agent execution completed but response field is empty")
 
     def _build_graph(self) -> CompiledStateGraph:
         graph_builder = StateGraph(AgentState)
@@ -45,7 +49,10 @@ class AgentR:
         graph_builder.add_node(NodeName.ORCHESTRATOR, OrchestratorNode(self.client))
         graph_builder.add_node(
             NodeName.TOOL_NODE,
-            ToolNode(tools=[web_search_factory()], messages_key="researcher_history"),
+            ToolNode(
+                tools=[ToolManager.get_structured_tool("web_search")],
+                messages_key="researcher_history",
+            ),
         )
 
         graph_builder.add_edge(START, NodeName.PREPROCESSOR)

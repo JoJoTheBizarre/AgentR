@@ -11,7 +11,7 @@ from langchain_core.messages import (
 )
 from models.states import ResearcherState
 from prompt_templates import RESEARCH_PROMPT
-from tools import web_search_factory
+from tools import ToolManager
 
 from .nodes import NodeName
 
@@ -40,7 +40,9 @@ class Researcher(BaseNode):
         request = HumanMessage(content=str(subtasks))
         messages = [*messages, request]
         response = self.client.with_structured_output(
-            messages=messages, tools=[web_search_factory()], parallel=True
+            messages=messages,
+            tools=[ToolManager.get_structured_tool("web_search")],
+            parallel=True,
         )
         researcher_history = state.get("researcher_history", [])
         return ResearcherState(
@@ -59,7 +61,9 @@ class Researcher(BaseNode):
         self, state: ResearcherState, messages: list[BaseMessage]
     ) -> ResearcherState:
         response = self.client.with_structured_output(
-            messages=messages, tools=[web_search_factory()], parallel=True
+            messages=messages,
+            tools=[ToolManager.get_structured_tool("web_search")],
+            parallel=True,
         )
         should_continue = self._should_continue(response)
         if should_continue:

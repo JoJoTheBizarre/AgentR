@@ -3,6 +3,7 @@ from langchain_core.messages import HumanMessage
 from models.states import PreprocessorState
 
 from .nodes import NodeName
+from .exceptions import StateError
 
 
 class QueryProcessor(BaseNode):
@@ -27,11 +28,14 @@ class QueryProcessor(BaseNode):
             Updated state with query added to message history
 
         Raises:
-            ValueError: If query is missing from state
+            StateError: If query is missing from state
         """
         query = state.get("query")
         if not query:
-            raise ValueError("Could not find user query in state")
+            raise StateError(
+                message="Could not find user query in state",
+                state_field="query"
+            )
 
         return PreprocessorState(
             message_history=[
