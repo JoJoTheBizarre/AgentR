@@ -1,19 +1,28 @@
 from datetime import UTC, datetime
 
 from client import OpenAIClient
-from graphs.base import BaseNode
+from graph.base import BaseNode
 from langchain_core.messages import AIMessage, BaseMessage, SystemMessage, ToolMessage
 from langchain_core.tools import StructuredTool
 from models.states import OrchestratorState
 from prompt_templates import SYS_ORCHESTRATOR
 from tools import ShouldResearch, research_tool_factory
 
+from .nodes import NodeName
+
 
 class OrchestratorNode(BaseNode):
-    """Orchestrator node that decides whether to perform research and synthesizes results."""
+    """Orchestrator node that decides whether to perform research
+    and synthesizes results."""
+
+    NODE_NAME = NodeName.ORCHESTRATOR
 
     def __init__(self, llm_client: OpenAIClient) -> None:
         self.client = llm_client
+
+    @property
+    def node_name(self) -> NodeName:
+        return NodeName.ORCHESTRATOR
 
     @staticmethod
     def _preprocess_system_prompt() -> str:

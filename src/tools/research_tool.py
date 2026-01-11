@@ -16,8 +16,9 @@ def should_research(
 
 
 WEB_SEARCH_TOOL_DESCRIPTION = (
-    "Use this tool to determine if additional research is needed to answer the user's query. "
-    "If research is needed, provide a list of specific subtasks to be researched."
+    "Use this tool to determine if additional research is needed to answer the "
+    "user's query. If research is needed, provide a list of specific subtasks "
+    "to be researched."
 )
 
 TOOL_NAME = "research_tool"
