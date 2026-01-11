@@ -46,9 +46,10 @@ class OrchestratorNode(BaseNode):
         message_history = state.get("message_history", [])
         messages = [system_message, *message_history]
 
+        #that mean we just initiated the graph
         if not state.get("should_research", False):
             return self._handle_initial_decision(state, messages)
-
+        #that means we invoked research and now its time for synthesis
         return self._handle_research_synthesis(state, messages)
 
     def _handle_initial_decision(
@@ -87,7 +88,7 @@ class OrchestratorNode(BaseNode):
 
         text_response = response.content
         if not text_response:
-            raise ValueError("Text response not provided by LLM")
+            raise ValueError("Neither Tool calls nor text response produced by the LLM")
 
         return OrchestratorState(
             message_history=[*state.get("message_history", []), response],
@@ -124,7 +125,6 @@ class OrchestratorNode(BaseNode):
             tool_call_id=research_id, content=str(research_findings)
         )
 
-        # Create new list instead of mutating input
         updated_messages = [*messages, tool_message]
         response = self.client.chat(messages=updated_messages)
 
