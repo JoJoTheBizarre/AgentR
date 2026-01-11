@@ -1,4 +1,5 @@
 from config import ClientSettings
+from graph.exceptions import ClientInitializationError
 from langchain_core.messages import AIMessage, BaseMessage, ToolCall
 from langchain_core.tools import StructuredTool
 from langchain_openai import ChatOpenAI
@@ -24,7 +25,7 @@ class OpenAIClient:
             client_config (ClientSettings | None): Optional config object.
 
         Raises:
-            ValueError: If necessary arguments are not provided.
+            ClientInitializationError: If necessary arguments are not provided.
         """
         if client_config:
             self.api_key = client_config.api_key
@@ -34,7 +35,7 @@ class OpenAIClient:
             self.api_key = api_key
             self.model = model
         else:
-            raise ValueError(
+            raise ClientInitializationError(
                 "You must provide either client_config or both api_key and model."
             )
 

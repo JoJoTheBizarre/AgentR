@@ -52,5 +52,8 @@ select = ["E", "F", "I", "B", "W", "Q", "C", "N", "UP", "YTT", "S", "RUF"]
 # Ignore specific rules (removed ANN101, ANN102, TCH since they no longer exist)
 ignore = []
 
+[tool.ruff.lint.per-file-ignores]
+"src/prompt_templates/*.py" = ["E501"]
+
 [tool.pytest.ini_options]
 pythonpath = "src"

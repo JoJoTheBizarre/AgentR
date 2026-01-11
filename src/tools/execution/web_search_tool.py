@@ -6,8 +6,8 @@ from models.states import Source, SourceType
 from pydantic import BaseModel, Field
 from tavily import AsyncTavilyClient, TavilyClient
 
-TOOL_NAME = "web_search"
-TOOL_DESCRIPTION = "Search the web using Tavily and return sources with content."
+from ..base.base_tool import BaseTool
+from graph.exceptions import ToolInitializationError
 
 
 class SearchInput(BaseModel):
@@ -21,11 +21,50 @@ class SearchInput(BaseModel):
     )
 
 
+class WebSearchTool(BaseTool):
+    """Execution tool for web search using Tavily API."""
+
+    TOOL_NAME = "web_search"
+    TOOL_DESCRIPTION = "Search the web using Tavily and return sources with content."
+
+    @property
+    def name(self) -> str:
+        return self.TOOL_NAME
+
+    @property
+    def description(self) -> str:
+        return self.TOOL_DESCRIPTION
+
+    @property
+    def args_schema(self):
+        return SearchInput
+
+    @property
+    def is_async(self) -> bool:
+        return True
+
+    def create_tool(self) -> StructuredTool:
+        """Create and return a StructuredTool instance with sync and async support."""
+        return StructuredTool.from_function(
+            name=self.name,
+            description=self.description,
+            args_schema=self.args_schema,
+            func=web_search_sync,
+            coroutine=web_search_async,
+        )
+
+    def get_func(self):
+        return web_search_sync
+
+    def get_coroutine(self):
+        return web_search_async
+
+
 def get_tavily_client() -> TavilyClient:
     """Initialize and return a Tavily client."""
     api_key = os.getenv("TAVILY_API_KEY")
     if not api_key:
-        raise ValueError("TAVILY_API_KEY environment variable is not set. ")
+        raise ToolInitializationError("TAVILY_API_KEY environment variable is not set. ")
     return TavilyClient(api_key=api_key)
 
 
@@ -33,7 +72,7 @@ def get_async_tavily_client() -> AsyncTavilyClient:
     """Initialize and return an async Tavily client."""
     api_key = os.getenv("TAVILY_API_KEY")
     if not api_key:
-        raise ValueError("TAVILY_API_KEY environment variable is not set. ")
+        raise ToolInitializationError("TAVILY_API_KEY environment variable is not set. ")
     return AsyncTavilyClient(api_key=api_key)
 
 
@@ -67,9 +106,9 @@ async def web_search_async(query: str) -> list[Source]:
 
 def web_search_factory() -> StructuredTool:
 
-    return  StructuredTool.from_function(
-        name=TOOL_NAME,
-        description=TOOL_DESCRIPTION,
+    return StructuredTool.from_function(
+        name=WebSearchTool.TOOL_NAME,
+        description=WebSearchTool.TOOL_DESCRIPTION,
         args_schema=SearchInput,
         func=web_search_sync,
         coroutine=web_search_async,
