@@ -54,24 +54,28 @@ class OpenAIClient:
         return response
 
     def with_structured_output(
-    self,
-    messages: list[BaseMessage],
-    tools: list[StructuredTool],
-    parallel: bool = False,
-) -> AIMessage:
+        self,
+        messages: list[BaseMessage],
+        tools: list[StructuredTool],
+        parallel: bool = False,
+        choice: str = "first",
+    ) -> AIMessage | ToolCall | list[ToolCall]:
         """
         Invoke the LLM with structured tools.
 
         Args:
             messages (list[BaseMessage]): List of messages to process.
             tools (list[StructuredTool]): Tools to bind to the LLM.
-            parallel (bool, optional): Whether to run tools in parallel. Defaults to False.
-            choice (str, optional): 'first' to return only the first tool call, 'all' to return all.
+            parallel (bool, optional): Whether to run tools in parallel.
+                Defaults to False.
+            choice (str, optional): 'first' to return only the first tool call,
+                'all' to return all. Defaults to "first".
 
         Returns:
-            Tuple:
-                - AIMessage if no tools are called, else ToolCall(s)
-                - bool indicating whether a tool was called
+            Union[AIMessage, ToolCall, list[ToolCall]]:
+                - AIMessage if no tools are called
+                - ToolCall if choice='first' and tools are called
+                - list[ToolCall] if choice='all' and tools are called
         """
         llm_with_tools = self.client.bind_tools(tools=tools, parallel=parallel)
         response = llm_with_tools.invoke(input=messages, choice=choice)

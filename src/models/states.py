@@ -31,7 +31,6 @@ class AgentState(TypedDict):
     max_iteration: int
 
     planned_subtasks: list[str]
-    completed_subtasks: list[str]
 
     research_id: str
     research_findings: Sources
