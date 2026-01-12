@@ -1,5 +1,6 @@
 from enum import StrEnum
-from typing import NotRequired
+from operator import add
+from typing import Annotated, NotRequired
 
 from langchain_core.messages import BaseMessage
 from typing_extensions import TypedDict
@@ -34,7 +35,7 @@ class AgentState(TypedDict):
 
     research_id: str
     research_findings: Sources
-    researcher_history: list[BaseMessage]
+    researcher_history: Annotated[list[BaseMessage], add]
 
 
 class PreprocessorState(TypedDict):
@@ -56,8 +57,9 @@ class OrchestratorState(TypedDict):
 class ResearcherState(TypedDict):
     planned_subtasks: NotRequired[list[str]]
 
-    current_iteration: int
+    current_iteration: NotRequired[int]
+    researcher_history: Annotated[list[BaseMessage], add]
     should_continue: bool
-    research_id: str
-    researcher_history: list[BaseMessage]
-    message_history: list[BaseMessage]
+
+    research_id: NotRequired[str]
+    message_history: NotRequired[list[BaseMessage]]

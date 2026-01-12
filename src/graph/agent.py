@@ -1,4 +1,8 @@
 from client import OpenAIClient
+from config import EnvConfig
+from langchain_core.runnables import RunnableConfig
+from langfuse import Langfuse
+from langfuse.langchain import CallbackHandler
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode
@@ -13,8 +17,15 @@ from .researcher import Researcher
 
 
 class AgentR:
-    def __init__(self, llm_client: OpenAIClient) -> None:
+    def __init__(self, llm_client: OpenAIClient, env_config: EnvConfig) -> None:
         self.client = llm_client
+        lf_callback = CallbackHandler()
+        lf_callback.client = Langfuse(
+            public_key=env_config.langfuse_public_key,
+            secret_key=env_config.langfuse_secret_key,
+            base_url=env_config.langfuse_base_url,
+        )
+        self.config = RunnableConfig(callbacks=[lf_callback])
         self.graph = self._build_graph()
 
     def _build_initial_state(self, request: str) -> AgentState:
@@ -35,7 +46,7 @@ class AgentR:
 
     def invoke(self, request: str) -> str:
         initial_state = self._build_initial_state(request)
-        agent_response = self.graph.invoke(initial_state)
+        agent_response = self.graph.invoke(initial_state, config=self.config)
         literal_response = agent_response.get("response")
         if literal_response:
             return literal_response
@@ -57,21 +68,20 @@ class AgentR:
 
         graph_builder.add_edge(START, NodeName.PREPROCESSOR)
         graph_builder.add_edge(NodeName.PREPROCESSOR, NodeName.ORCHESTRATOR)
+
         graph_builder.add_conditional_edges(
-            NodeName.ORCHESTRATOR,
-            self._should_continue,
-            [NodeName.RESEARCHER, END]
+            NodeName.ORCHESTRATOR, self._should_continue, [NodeName.RESEARCHER, END]
         )
 
         graph_builder.add_conditional_edges(
             NodeName.RESEARCHER,
             self._should_continue_research,
-            [NodeName.TOOL_NODE, NodeName.ORCHESTRATOR]
+            [NodeName.TOOL_NODE, NodeName.ORCHESTRATOR],
         )
 
+        graph_builder.add_edge(NodeName.TOOL_NODE, NodeName.RESEARCHER)
 
-        return graph_builder.compile()
-
+        return graph_builder.compile().with_config(self.config)
 
     @staticmethod
     def _should_continue(state: AgentState):

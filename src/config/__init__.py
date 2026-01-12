@@ -1,3 +1,3 @@
-from .configs import ClientSettings
+from .configs import EnvConfig
 
-__all__ = ["ClientSettings"]
+__all__ = ["EnvConfig"]

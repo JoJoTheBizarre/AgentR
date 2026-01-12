@@ -1,4 +1,4 @@
-from config import ClientSettings
+from config import EnvConfig
 from graph.exceptions import ClientInitializationError
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.tools import StructuredTool
@@ -14,7 +14,7 @@ class OpenAIClient:
         self,
         model: str | None = None,
         api_key: str | None = None,
-        client_config: ClientSettings | None = None,
+        client_config: EnvConfig | None = None,
     ) -> None:
         """
         Initialize the OpenAI client.

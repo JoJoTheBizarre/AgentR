@@ -8,8 +8,8 @@ from models.states import OrchestratorState
 from prompt_templates import SYS_ORCHESTRATOR
 from tools import ShouldResearch, ToolManager
 
-from .nodes import NodeName
 from .exceptions import NodeInputError, NodeOutputError, StateError
+from .nodes import NodeName
 
 
 class OrchestratorNode(BaseNode):
@@ -56,10 +56,10 @@ class OrchestratorNode(BaseNode):
         message_history = state.get("message_history", [])
         messages = [system_message, *message_history]
 
-        #that mean we just initiated the graph
+        # that mean we just initiated the graph
         if not state.get("should_research", False):
             return self._handle_initial_decision(state, messages)
-        #that means we invoked research and now its time for synthesis
+        # that means we invoked research and now its time for synthesis
         return self._handle_research_synthesis(state, messages)
 
     def _handle_initial_decision(
@@ -89,7 +89,7 @@ class OrchestratorNode(BaseNode):
             if not research_id:
                 raise NodeInputError(
                     node_name=self.node_name,
-                    message="Research id not provided in tool call"
+                    message="Research id not provided in tool call",
                 )
 
             planned_subtasks = ShouldResearch(**tool_call["args"])
@@ -104,7 +104,7 @@ class OrchestratorNode(BaseNode):
         if not text_response:
             raise NodeOutputError(
                 node_name=self.node_name,
-                message="Neither Tool calls nor text response produced by the LLM"
+                message="Neither Tool calls nor text response produced by the LLM",
             )
 
         return OrchestratorState(
@@ -128,33 +128,19 @@ class OrchestratorNode(BaseNode):
         Raises:
             StateError: If research findings or ID are missing
         """
-        research_findings = state.get("research_findings")
-        research_id = state.get("research_id")
 
-        if not research_findings or not research_id:
-            raise StateError(
-                message=f"Missing required data - "
-                f"research_findings: {bool(research_findings)}, "
-                f"research_id: {bool(research_id)}",
-                state_field=None
-            )
-
-        tool_message = ToolMessage(
-            tool_call_id=research_id, content=str(research_findings)
-        )
-
-        updated_messages = [*messages, tool_message]
+        updated_messages = [*messages]
         response = self.client.chat(messages=updated_messages)
 
         response_content = response.content
         if not response_content:
             raise NodeOutputError(
                 node_name=self.node_name,
-                message="Empty response content from LLM after research"
+                message="Empty response content from LLM after research",
             )
 
         return OrchestratorState(
-            message_history=[*state.get("message_history", []), tool_message, response],
+            message_history=[*state.get("message_history", []), response],
             response=response_content,
             should_research=False,
         )
