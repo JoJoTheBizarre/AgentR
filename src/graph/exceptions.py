@@ -1,6 +1,5 @@
 """Custom exceptions for the AgentR system."""
 
-from typing import Optional
 
 from .nodes import NodeName
 
@@ -35,7 +34,7 @@ class AgentExecutionError(AgentRError):
 class StateError(AgentExecutionError):
     """Exception raised when state is invalid or missing required fields."""
 
-    def __init__(self, message: str, state_field: Optional[str] = None):
+    def __init__(self, message: str, state_field: str | None = None):
         self.state_field = state_field
         if state_field:
             message = f"State error in field '{state_field}': {message}"

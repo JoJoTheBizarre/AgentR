@@ -1,12 +1,18 @@
 from pydantic_settings import BaseSettings
+from pydantic import model_validator
 
-
-class ClientSettings(BaseSettings):
+class EnvConfig(BaseSettings):
     api_key: str
-    api_url: str = "https://api.openai.com/v1"
-    model_name: str = "gpt-4o-mini"
-    tavily_api_key: str = ""
+    api_url: str
+    model_name: str
+    tavily_api_key: str
+    langfuse_base_url: str
+    langfuse_public_key: str
+    langfuse_secret_key: str
+
+
+
 
     class Config:
-        env_file = (".env.dev", ".env")  # Try .env.dev first, then .env
+        env_file = (".env.dev")
         extra = "allow"

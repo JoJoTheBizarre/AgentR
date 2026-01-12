@@ -14,7 +14,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 from client import OpenAIClient
-from config import ClientSettings
+from config import EnvConfig
 from graph.agent import AgentR
 
 
@@ -34,12 +34,15 @@ def initialize_agent(
         Initialized AgentR instance
     """
     try:
-        client_config = ClientSettings()
-        print(f"✓ Using environment configuration: model={client_config.model_name}")
-
+        env_config = EnvConfig()
+        print(f"✓ Using environment configuration: model={env_config.model_name}")
+        if env_config.langfuse_base_url:
+            print("here is the base url for the langfuse server", env_config.langfuse_base_url)
+        else:
+            print("no base url found")
         # Set Tavily API key in environment if loaded from config
-        if client_config.tavily_api_key and not os.getenv("TAVILY_API_KEY"):
-            os.environ["TAVILY_API_KEY"] = client_config.tavily_api_key
+        if env_config.tavily_api_key and not os.getenv("TAVILY_API_KEY"):
+            os.environ["TAVILY_API_KEY"] = env_config.tavily_api_key
             print("✓ Tavily API key loaded from configuration")
 
     except Exception as e:
@@ -61,10 +64,10 @@ def initialize_agent(
 
     try:
         # Initialize OpenAI client
-        client = OpenAIClient(client_config=client_config)
+        client = OpenAIClient(client_config=env_config)
 
         # Initialize AgentR
-        agent = AgentR(llm_client=client)
+        agent = AgentR(llm_client=client, env_config=env_config)
         print("✓ AgentR initialized successfully")
         return agent
     except Exception as e:
