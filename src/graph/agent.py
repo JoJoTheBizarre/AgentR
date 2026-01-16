@@ -37,6 +37,11 @@ class AgentR:
         self.config = RunnableConfig(callbacks=[lf_callback])
         self.graph = self._build_graph()
 
+    def draw_save_mermaid_graph(self):
+        mermaid_code = self.graph.get_graph().draw_mermaid_png()
+        with open("graph_diagram.png", "wb") as f:
+            f.write(mermaid_code)
+
     def _build_initial_state(self, request: str) -> AgentState:
         """Create initial state for the agent graph."""
         return AgentState(
@@ -52,6 +57,7 @@ class AgentR:
         )
 
     def invoke(self, request: str) -> str:
+        self.draw_save_mermaid_graph()
         initial_state = self._build_initial_state(request)
         agent_response = self.graph.invoke(initial_state, config=self.config)
         literal_response = agent_response.get("response")
@@ -98,7 +104,7 @@ class AgentR:
 
         graph_builder.add_edge(NodeName.TOOL_NODE, NodeName.RESEARCHER)
 
-        return graph_builder.compile().with_config(self.config)
+        return graph_builder.compile()
 
     @staticmethod
     def _should_continue(state: AgentState):
