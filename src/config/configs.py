@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings
 from pydantic import model_validator
 
+
 class EnvConfig(BaseSettings):
     api_key: str
     api_url: str
@@ -10,9 +11,6 @@ class EnvConfig(BaseSettings):
     langfuse_public_key: str
     langfuse_secret_key: str
 
-
-
-
     class Config:
-        env_file = (".env.dev")
+        env_file = ".env.dev"
         extra = "allow"

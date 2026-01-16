@@ -1,4 +1,3 @@
-
 from langchain_core.tools import StructuredTool
 from pydantic import BaseModel
 
@@ -55,8 +54,6 @@ def should_research(
     return ShouldResearch(
         subtasks=subtasks,
     )
-
-
 
 
 def research_tool_factory() -> StructuredTool:
