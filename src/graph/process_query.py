@@ -2,8 +2,8 @@ from graph.base import BaseNode
 from langchain_core.messages import HumanMessage
 from models.states import PreprocessorState
 
-from .nodes import NodeName
 from .exceptions import StateError
+from .nodes import NodeName
 
 
 class QueryProcessor(BaseNode):
@@ -36,9 +36,4 @@ class QueryProcessor(BaseNode):
                 message="Could not find user query in state", state_field="query"
             )
 
-        return PreprocessorState(
-            message_history=[
-                *state.get("message_history", []),
-                HumanMessage(content=query),
-            ]
-        )
+        return PreprocessorState(message_history=[HumanMessage(content=query)])

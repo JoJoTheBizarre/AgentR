@@ -1,13 +1,14 @@
 import os
 from typing import Any
 
+from graph.exceptions import ToolInitializationError
 from langchain_core.tools import StructuredTool
 from models.states import Source, SourceType
 from pydantic import BaseModel, Field
 from tavily import AsyncTavilyClient, TavilyClient
 
 from ..base.base_tool import BaseTool
-from graph.exceptions import ToolInitializationError
+from ..names import ToolName
 
 
 class SearchInput(BaseModel):
@@ -24,8 +25,8 @@ class SearchInput(BaseModel):
 class WebSearchTool(BaseTool):
     """Execution tool for web search using Tavily API."""
 
-    TOOL_NAME = "web_search"
-    TOOL_DESCRIPTION = "Search the web using Tavily and return sources with content."
+    TOOL_NAME = ToolName.WEB_SEARCH
+    TOOL_DESCRIPTION = "Search the web for up to date information using nature language"
 
     @property
     def name(self) -> str:

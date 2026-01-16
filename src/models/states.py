@@ -24,18 +24,19 @@ class AgentState(TypedDict):
     query: str
     response: str
 
-    message_history: list[BaseMessage]
+    message_history: Annotated[list[BaseMessage], add]
 
     should_research: bool
     should_continue: bool
-    current_iteration: int
-    max_iteration: int
+    current_iteration: Annotated[int, add]
 
     planned_subtasks: list[str]
 
     research_id: str
-    research_findings: Sources
     researcher_history: Annotated[list[BaseMessage], add]
+
+
+# the substate's are mainly for typing the nodes only thats why im not adding the reducers
 
 
 class PreprocessorState(TypedDict):
@@ -58,7 +59,7 @@ class ResearcherState(TypedDict):
     planned_subtasks: NotRequired[list[str]]
 
     current_iteration: NotRequired[int]
-    researcher_history: Annotated[list[BaseMessage], add]
+    researcher_history: list[BaseMessage]
     should_continue: bool
 
     research_id: NotRequired[str]
