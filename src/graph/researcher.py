@@ -31,9 +31,7 @@ class Researcher(BaseNode):
     @staticmethod
     def _preprocess_system_prompt() -> str:
         """Format the system prompt with the current UTC time."""
-        return RESEARCH_PROMPT.format(
-            current_time=datetime.now(UTC).isoformat()
-        )
+        return RESEARCH_PROMPT.format(current_time=datetime.now(UTC).isoformat())
 
     @staticmethod
     def _should_continue(response: AIMessage) -> bool:
@@ -90,7 +88,7 @@ class Researcher(BaseNode):
             researcher_history=[response],
             should_continue=should_continue,
             planned_subtasks=[],
-            research_id=""
+            research_id="",
         )
 
     def _execute(self, state: ResearcherState) -> ResearcherState:

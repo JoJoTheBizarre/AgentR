@@ -33,8 +33,7 @@ class QueryProcessor(BaseNode):
         query = state.get("query")
         if not query:
             raise StateError(
-                message="Could not find user query in state",
-                state_field="query"
+                message="Could not find user query in state", state_field="query"
             )
 
         return PreprocessorState(

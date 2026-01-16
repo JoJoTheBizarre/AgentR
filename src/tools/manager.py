@@ -1,6 +1,5 @@
 """Tool manager for centralized tool registration and retrieval."""
 
-
 from typing import ClassVar
 
 from langchain_core.tools import StructuredTool
