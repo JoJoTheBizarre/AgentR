@@ -3,6 +3,7 @@ from graph.exceptions import ClientInitializationError
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.tools import StructuredTool
 from langchain_openai import ChatOpenAI
+from pydantic import SecretStr
 
 
 class OpenAIClient:
@@ -41,9 +42,9 @@ class OpenAIClient:
 
         self.client = ChatOpenAI(
             model=self.model,
-            api_key=str(self.api_key),
+            api_key=SecretStr(self.api_key),
             base_url=self.api_url,
-        )  # pyright: ignore[reportArgumentType]
+        )
 
     def chat(self, messages: list[BaseMessage]) -> AIMessage:
         """

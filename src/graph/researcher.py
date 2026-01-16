@@ -11,7 +11,7 @@ from langchain_core.messages import (
 )
 from models.states import ResearcherState
 from prompt_templates import RESEARCH_PROMPT
-from tools import ToolManager
+from tools import ToolManager, ToolName
 
 from .nodes import NodeName
 
@@ -21,8 +21,14 @@ class Researcher(BaseNode):
 
     NODE_NAME = NodeName.RESEARCHER
 
-    def __init__(self, llm_client: OpenAIClient) -> None:
+    def __init__(
+        self, llm_client: OpenAIClient, tool_names: list[ToolName | str] | None = None
+    ) -> None:
         self.client = llm_client
+        self.tool_names = tool_names or [ToolName.WEB_SEARCH]
+        self._tools = [
+            ToolManager.get_structured_tool(name) for name in self.tool_names
+        ]
 
     @property
     def node_name(self) -> NodeName:
@@ -35,7 +41,9 @@ class Researcher(BaseNode):
 
     @staticmethod
     def _should_continue(response: AIMessage) -> bool:
-        return bool(response.tool_calls)
+        return bool(
+            response.tool_calls
+        )  # invoking tool calls means we didnt finish the research
 
     def _handle_initial_request(
         self, state: ResearcherState, messages: list[BaseMessage]
@@ -46,15 +54,13 @@ class Researcher(BaseNode):
 
         response = self.client.with_structured_output(
             messages=messages,
-            tools=[ToolManager.get_structured_tool("web_search")],
+            tools=self._tools,
             parallel=True,
         )
 
-        researcher_history = state.get("researcher_history", [])
-
         return ResearcherState(
-            current_iteration=state.get("current_iteration", 0) + 1,
-            researcher_history=[*researcher_history, request, response],
+            current_iteration=1,
+            researcher_history=[request, response],
             should_continue=self._should_continue(response),
         )
 
@@ -63,7 +69,7 @@ class Researcher(BaseNode):
     ) -> ResearcherState:
         response = self.client.with_structured_output(
             messages=messages,
-            tools=[ToolManager.get_structured_tool("web_search")],
+            tools=self._tools,
             parallel=True,
         )
 
@@ -71,22 +77,19 @@ class Researcher(BaseNode):
 
         if should_continue:
             return ResearcherState(
-                current_iteration=state.get("current_iteration", 0) + 1,
+                current_iteration=1,
                 researcher_history=[response],
                 should_continue=True,
             )
 
         research_id = state.get("research_id", "")
-        message_history = [
-            *(state.get("message_history") or []),
-            ToolMessage(content=str(response.content), tool_call_id=research_id),
-        ]
-        should_continue = False
 
         return ResearcherState(
-            message_history=message_history,
+            message_history=[
+                ToolMessage(content=str(response.content), tool_call_id=research_id)
+            ],
             researcher_history=[response],
-            should_continue=should_continue,
+            should_continue=False,
             planned_subtasks=[],
             research_id="",
         )

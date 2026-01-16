@@ -1,11 +1,12 @@
 """Tool manager for centralized tool registration and retrieval."""
 
-from typing import ClassVar
+from typing import ClassVar, Union
 
+from graph.exceptions import ToolInitializationError
 from langchain_core.tools import StructuredTool
 
 from .base.base_tool import BaseTool
-from graph.exceptions import ToolInitializationError
+from .names import ToolName
 
 
 class ToolManager:
@@ -35,10 +36,10 @@ class ToolManager:
             raise ToolInitializationError(f"Tool '{tool_name}' is already registered")
 
         cls._registry[tool_name] = tool_class
-        print(f"Registered tool: {tool_name}")  # TODO: Replace with proper logging
+        print(f"Registered tool: {tool_name}")
 
     @classmethod
-    def get_tool(cls, name: str) -> BaseTool:
+    def get_tool(cls, name: ToolName | str) -> BaseTool:
         """Get a tool instance by name.
 
         Args:
@@ -62,7 +63,7 @@ class ToolManager:
         return cls._registry[name]()
 
     @classmethod
-    def get_structured_tool(cls, name: str):
+    def get_structured_tool(cls, name: ToolName | str):
         """Get a LangChain StructuredTool instance by tool name.
 
         Args:

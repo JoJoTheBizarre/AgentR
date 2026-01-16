@@ -1,5 +1,4 @@
 from pydantic_settings import BaseSettings
-from pydantic import model_validator
 
 
 class EnvConfig(BaseSettings):

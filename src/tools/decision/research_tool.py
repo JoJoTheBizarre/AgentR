@@ -2,6 +2,7 @@ from langchain_core.tools import StructuredTool
 from pydantic import BaseModel
 
 from ..base.base_tool import BaseTool
+from ..names import ToolName
 
 
 class ShouldResearch(BaseModel):
@@ -11,7 +12,7 @@ class ShouldResearch(BaseModel):
 class ResearchDecisionTool(BaseTool):
     """Decision tool for determining if research is needed and planning subtasks."""
 
-    TOOL_NAME = "research_tool"
+    TOOL_NAME = ToolName.RESEARCH_TOOL
     TOOL_DESCRIPTION = (
         "Use this tool to determine if additional research is needed to answer the "
         "user's query. If research is needed, provide a list of specific subtasks "

@@ -2,13 +2,12 @@ from datetime import UTC, datetime
 
 from client import OpenAIClient
 from graph.base import BaseNode
-from langchain_core.messages import AIMessage, BaseMessage, SystemMessage, ToolMessage
-from langchain_core.tools import StructuredTool
+from langchain_core.messages import AIMessage, BaseMessage, SystemMessage
 from models.states import OrchestratorState
 from prompt_templates import SYS_ORCHESTRATOR
-from tools import ShouldResearch, ToolManager
+from tools import ShouldResearch, ToolManager, ToolName
 
-from .exceptions import NodeInputError, NodeOutputError, StateError
+from .exceptions import NodeInputError, NodeOutputError
 from .nodes import NodeName
 
 
@@ -31,14 +30,22 @@ class OrchestratorNode(BaseNode):
         return SYS_ORCHESTRATOR.format(current_time=datetime.now(UTC).isoformat())
 
     @staticmethod
-    def _research_factory() -> StructuredTool:
-        """Return a ready-to-use research tool."""
-        return ToolManager.get_structured_tool("research_tool")
-
-    @staticmethod
     def _is_tool_call(response: AIMessage) -> bool:
         """Check if the AIMessage contains a tool call."""
-        return bool(response.tool_calls)
+        return bool(
+            response.tool_calls
+        )  # invoking tool calls meas we didnt finish the research
+
+    @staticmethod
+    def _extract_text_response(response: AIMessage) -> str:
+        content = response.content
+
+        if isinstance(content, str):
+            return content
+
+        raise TypeError(
+            f"Expected response.content to be str, got {type(content).__name__}"
+        )
 
     def _execute(self, state: OrchestratorState) -> OrchestratorState:
         """Execute the orchestrator logic.
@@ -80,7 +87,7 @@ class OrchestratorNode(BaseNode):
         """
         response = self.client.with_structured_output(
             messages=messages,
-            tools=[self._research_factory()],
+            tools=[ToolManager.get_structured_tool(ToolName.RESEARCH_TOOL)],
         )
 
         if self._is_tool_call(response):
@@ -94,14 +101,14 @@ class OrchestratorNode(BaseNode):
 
             planned_subtasks = ShouldResearch(**tool_call["args"])
             return OrchestratorState(
-                message_history=[*state.get("message_history", []), response],
+                message_history=[response],
                 should_research=True,
                 planned_subtasks=planned_subtasks.subtasks,
                 research_id=research_id,
             )
 
-        text_response = response.content
-        if not text_response:
+        response_content = response.content
+        if not response_content:
             raise NodeOutputError(
                 node_name=self.node_name,
                 message="Neither Tool calls nor text response produced by the LLM",
@@ -110,7 +117,7 @@ class OrchestratorNode(BaseNode):
         return OrchestratorState(
             message_history=[*state.get("message_history", []), response],
             should_research=False,
-            response=text_response,
+            response=self._extract_text_response(response),
         )
 
     def _handle_research_synthesis(
@@ -129,8 +136,7 @@ class OrchestratorNode(BaseNode):
             StateError: If research findings or ID are missing
         """
 
-        updated_messages = [*messages]
-        response = self.client.chat(messages=updated_messages)
+        response = self.client.chat(messages=messages)
 
         response_content = response.content
         if not response_content:
@@ -141,6 +147,6 @@ class OrchestratorNode(BaseNode):
 
         return OrchestratorState(
             message_history=[*state.get("message_history", []), response],
-            response=response_content,
+            response=self._extract_text_response(response),
             should_research=False,
         )
