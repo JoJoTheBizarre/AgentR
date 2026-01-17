@@ -8,7 +8,6 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.12,<4.0.0"
 dependencies = [
-    "anthropic (>=0.75.0,<0.76.0)",
     "python-dotenv (>=1.2.1,<2.0.0)",
     "openai (>=2.14.0,<3.0.0)",
     "pytest (>=9.0.2,<10.0.0)",
@@ -19,7 +18,7 @@ dependencies = [
     "langfuse (>=3.11.2,<4.0.0)",
     "langchain (>=1.2.3,<2.0.0)",
     "langchain-openai (>=1.1.7,<2.0.0)",
-    "grandalf (>=0.8,<0.9)"
+    "grandalf (>=0.8,<0.9)",
 ]
 
 [build-system]
