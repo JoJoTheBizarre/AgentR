@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 
 from client import OpenAIClient
 from graph.base import BaseNode
-from langchain_core.messages import AIMessage, BaseMessage, SystemMessage
+from langchain_core.messages import AIMessage, BaseMessage, SystemMessage, HumanMessage
 from models.states import OrchestratorState
 from prompt_templates import SYS_ORCHESTRATOR
 from tools import ShouldResearch, ToolManager, ToolName
@@ -34,7 +34,7 @@ class OrchestratorNode(BaseNode):
         """Check if the AIMessage contains a tool call."""
         return bool(
             response.tool_calls
-        )  # invoking tool calls meas we didnt finish the research
+        )  # invoking tool calls means we will delegate control to a subagent
 
     @staticmethod
     def _extract_text_response(response: AIMessage) -> str:
@@ -46,6 +46,10 @@ class OrchestratorNode(BaseNode):
         raise TypeError(
             f"Expected response.content to be str, got {type(content).__name__}"
         )
+
+    @staticmethod
+    def _just_started(messages: list[BaseMessage]) -> bool:
+        return isinstance(messages[-1], HumanMessage)
 
     def _execute(self, state: OrchestratorState) -> OrchestratorState:
         """Execute the orchestrator logic.
@@ -64,7 +68,7 @@ class OrchestratorNode(BaseNode):
         messages = [system_message, *message_history]
 
         # that mean we just initiated the graph
-        if not state.get("should_research", False):
+        if self._just_started:
             return self._handle_initial_decision(state, messages)
         # that means we invoked research and now its time for synthesis
         return self._handle_research_synthesis(state, messages)
@@ -72,19 +76,7 @@ class OrchestratorNode(BaseNode):
     def _handle_initial_decision(
         self, state: OrchestratorState, messages: list[BaseMessage]
     ) -> OrchestratorState:
-        """Handle initial decision on whether to research.
-
-        Args:
-            state: Current orchestrator state
-            messages: Message history with system prompt
-
-        Returns:
-            Updated state with research decision
-
-        Raises:
-            NodeInputError: If research_id is missing in tool call
-            NodeOutputError: If neither tool calls nor text response produced by the LLM
-        """
+        """Handle initial decision on whether to research."""
         response = self.client.with_structured_output(
             messages=messages,
             tools=[ToolManager.get_structured_tool(ToolName.RESEARCH_TOOL)],
@@ -104,7 +96,7 @@ class OrchestratorNode(BaseNode):
                 message_history=[response],
                 should_research=True,
                 planned_subtasks=planned_subtasks.subtasks,
-                research_id=research_id,
+                sub_agent_call_id=research_id,
             )
 
         response_content = response.content

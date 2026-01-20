@@ -26,13 +26,13 @@ class AgentState(TypedDict):
 
     message_history: Annotated[list[BaseMessage], add]
 
-    should_research: bool
+    should_delegate: bool
     should_continue: bool
     current_iteration: Annotated[int, add]
 
     planned_subtasks: list[str]
 
-    research_id: str
+    sub_agent_call_id: str
     researcher_history: Annotated[list[BaseMessage], add]
 
 
@@ -50,7 +50,7 @@ class OrchestratorState(TypedDict):
 
     planned_subtasks: NotRequired[list[str]]
 
-    research_id: NotRequired[str]
+    sub_agent_call_id: NotRequired[str]
     research_findings: NotRequired[Sources]
     response: NotRequired[str]
 
