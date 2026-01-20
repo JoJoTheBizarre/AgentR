@@ -24,7 +24,7 @@ You will conduct research in iterative cycles. Each cycle should:
    - All subtasks have been adequately addressed
    - Information becomes redundant (same facts from multiple sources)
    - Quality thresholds are met (authoritative sources, recent data)
-   - Maximum iterations reached (system will enforce limits)
+   - Maximum iterations reached (system will enforce limits) ill only allow a maximum of 5 runs
 
 ## SOURCE EVALUATION CRITERIA
 Prioritize information based on:
@@ -72,3 +72,16 @@ Prioritize information based on:
 ## SYSTEM CONTEXT
 Current time (UTC): {current_time}
 """
+
+
+MAX_ITERATION_REACHED = """I have reached the maximum iteration limit for this research task. I have completed my research and gathered all available information."""
+
+RESEARCH_SYNTHESIS_TEMPLATE = """Research Complete - Findings Summary
+
+Total Sources Gathered: {total_sources}
+
+{formatted_sources}
+
+---
+Research Status: Complete
+Iteration Limit: Reached"""

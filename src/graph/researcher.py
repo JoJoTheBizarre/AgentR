@@ -1,3 +1,4 @@
+import json
 from datetime import UTC, datetime
 
 from client import OpenAIClient
@@ -9,8 +10,12 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
-from models.states import ResearcherState
-from prompt_templates import RESEARCH_PROMPT
+from models.states import ResearcherState, Source, Sources
+from prompt_templates import (
+    MAX_ITERATION_REACHED,
+    RESEARCH_PROMPT,
+    RESEARCH_SYNTHESIS_TEMPLATE,
+)
 from tools import ToolManager, ToolName
 
 from .nodes import NodeName
@@ -30,6 +35,8 @@ class Researcher(BaseNode):
             ToolManager.get_structured_tool(name) for name in self.tool_names
         ]
 
+        self.research_findings: list[Source] = []
+
     @property
     def node_name(self) -> NodeName:
         return NodeName.RESEARCHER
@@ -43,11 +50,33 @@ class Researcher(BaseNode):
     def _should_continue(response: AIMessage) -> bool:
         return bool(
             response.tool_calls
-        )  # invoking tool calls means we didnt finish the research
+        )
+
+    @staticmethod
+    def _format_research_synthesis(research_findings: list[Source]) -> str:
+        """Format research findings using the synthesis template."""
+
+        def format_single_source(idx: int, source: Source) -> str:
+            return f"""[Source {idx + 1}]
+            Type: {source['type']}
+            Source: {source['source']}
+            Content: {source['content']}
+            """
+
+        formatted_sources = "\n".join(
+            format_single_source(i, source)
+            for i, source in enumerate(research_findings)
+        )
+
+        return RESEARCH_SYNTHESIS_TEMPLATE.format(
+            total_sources=len(research_findings), formatted_sources=formatted_sources
+        )
 
     def _handle_initial_request(
         self, state: ResearcherState, messages: list[BaseMessage]
     ) -> ResearcherState:
+        #clear the research findings from previous runs if they exist
+        self.research_findings = []
         subtasks = state.get("planned_subtasks", [])
         request = HumanMessage(content=str(subtasks))
         messages = [*messages, request]
@@ -67,6 +96,7 @@ class Researcher(BaseNode):
     def _handle_subsequent_iterations(
         self, state: ResearcherState, messages: list[BaseMessage]
     ) -> ResearcherState:
+
         response = self.client.with_structured_output(
             messages=messages,
             tools=self._tools,
@@ -76,6 +106,10 @@ class Researcher(BaseNode):
         should_continue = self._should_continue(response)
 
         if should_continue:
+            research_results = str(state["researcher_history"][-1].content)
+            parsed_results = json.loads(research_results)
+            self.research_findings.extend([Source(**item) for item in parsed_results])
+
             return ResearcherState(
                 current_iteration=1,
                 researcher_history=[response],
@@ -94,6 +128,28 @@ class Researcher(BaseNode):
             research_id="",
         )
 
+    def _handle_research_handoff(
+        self, state: ResearcherState, messages: list[BaseMessage]
+    ) -> ResearcherState:
+        iteration_limit_message = AIMessage(content=MAX_ITERATION_REACHED)
+
+        synthesis = self._format_research_synthesis(self.research_findings)
+
+        research_id = state.get("research_id", "")
+
+        return ResearcherState(
+            message_history=[
+                ToolMessage(
+                    content=synthesis,
+                    tool_call_id=research_id,
+                )
+            ],
+            researcher_history=[iteration_limit_message],
+            should_continue=False,
+            planned_subtasks=[],
+            research_id="",
+        )
+
     def _execute(self, state: ResearcherState) -> ResearcherState:
         current_iteration = state.get("current_iteration", 0)
         system_message = SystemMessage(content=self._preprocess_system_prompt())
@@ -102,5 +158,7 @@ class Researcher(BaseNode):
 
         if current_iteration == 0:
             return self._handle_initial_request(state, messages)
+        elif current_iteration > 5:
+            return self._handle_research_handoff(state, messages)
         else:
             return self._handle_subsequent_iterations(state, messages)
