@@ -2,6 +2,7 @@ import json
 from datetime import UTC, datetime
 
 from client import OpenAIClient
+from exceptions import AgentExecutionError, ValidationError
 from graph.base import BaseNode
 from langchain_core.messages import (
     AIMessage,
@@ -10,7 +11,8 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
-from models.states import ResearcherState, Source, Sources
+from langchain_core.runnables import RunnableConfig
+from models.states import ResearcherState, Source, SourceType
 from prompt_templates import (
     MAX_ITERATION_REACHED,
     RESEARCH_PROMPT,
@@ -72,6 +74,56 @@ class Researcher(BaseNode):
             total_sources=len(research_findings), formatted_sources=formatted_sources
         )
 
+    def _parse_research_results(self, results_str: str) -> list[dict]:
+        """Parse and validate research results JSON.
+
+        Args:
+            results_str: JSON string containing research results
+
+        Returns:
+            List of validated source dictionaries
+
+        Raises:
+            ValidationError: If JSON is invalid or structure doesn't match Source schema
+        """
+        try:
+            parsed = json.loads(results_str)
+        except json.JSONDecodeError as e:
+            raise ValidationError(f"Invalid JSON in research results: {e}")
+
+        if not isinstance(parsed, list):
+            raise ValidationError(f"Expected list of sources, got {type(parsed).__name__}")
+
+        validated_sources = []
+        for i, item in enumerate(parsed):
+            if not isinstance(item, dict):
+                raise ValidationError(f"Source at index {i} is not a dictionary")
+
+            # Check required fields
+            required_fields = {"source", "content", "type"}
+            missing = required_fields - set(item.keys())
+            if missing:
+                raise ValidationError(f"Source at index {i} missing fields: {missing}")
+
+            # Validate type is valid SourceType
+            try:
+                SourceType(item["type"])
+            except ValueError:
+                raise ValidationError(
+                    f"Source at index {i} has invalid type: {item['type']}. "
+                    f"Expected one of: {[e.value for e in SourceType]}"
+                )
+
+            # Ensure fields are strings
+            if not isinstance(item["source"], str):
+                raise ValidationError(f"Source at index {i} 'source' field must be string")
+            if not isinstance(item["content"], str):
+                raise ValidationError(f"Source at index {i} 'content' field must be string")
+
+            validated_sources.append(item)
+
+        return validated_sources
+
     def _handle_initial_request(
         self, state: ResearcherState, messages: list[BaseMessage]
     ) -> ResearcherState:
@@ -107,7 +159,7 @@ class Researcher(BaseNode):
 
         if should_continue:
             research_results = str(state["researcher_history"][-1].content)
-            parsed_results = json.loads(research_results)
+            parsed_results = self._parse_research_results(research_results)
             self.research_findings.extend([Source(**item) for item in parsed_results])
 
             return ResearcherState(
@@ -150,7 +202,11 @@ class Researcher(BaseNode):
             research_id="",
         )
 
-    def _execute(self, state: ResearcherState) -> ResearcherState:
+    def _execute(self, state: ResearcherState, config: RunnableConfig) -> ResearcherState:
+        configurables = config.get("configurable")
+        if not configurables:
+            raise AgentExecutionError("could not find max_iteration config")
+        max_iterations = configurables.get("max_iterations")
         current_iteration = state.get("current_iteration", 0)
         system_message = SystemMessage(content=self._preprocess_system_prompt())
         researcher_history = state.get("researcher_history", [])
@@ -158,7 +214,7 @@ class Researcher(BaseNode):
 
         if current_iteration == 0:
             return self._handle_initial_request(state, messages)
-        elif current_iteration > 5:
+        elif current_iteration > max_iterations:
             return self._handle_research_handoff(state, messages)
         else:
             return self._handle_subsequent_iterations(state, messages)
