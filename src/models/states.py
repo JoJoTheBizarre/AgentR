@@ -64,3 +64,4 @@ class ResearcherState(TypedDict):
 
     sub_agent_call_id: NotRequired[str]
     message_history: NotRequired[list[BaseMessage]]
+    research_findings: NotRequired[Sources]

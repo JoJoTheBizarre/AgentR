@@ -37,7 +37,6 @@ class Researcher(BaseNode):
             ToolManager.get_structured_tool(name) for name in self.tool_names
         ]
 
-        self.research_findings: list[Source] = []
 
     @property
     def node_name(self) -> NodeName:
@@ -128,7 +127,6 @@ class Researcher(BaseNode):
         self, state: ResearcherState, messages: list[BaseMessage]
     ) -> ResearcherState:
         #clear the research findings from previous runs if they exist
-        self.research_findings = []
         subtasks = state.get("planned_subtasks", [])
         request = HumanMessage(content=str(subtasks))
         messages = [*messages, request]
@@ -143,6 +141,7 @@ class Researcher(BaseNode):
             current_iteration=1,
             researcher_history=[request, response],
             should_continue=self._should_continue(response),
+            research_findings=[],
         )
 
     def _handle_subsequent_iterations(
@@ -160,12 +159,14 @@ class Researcher(BaseNode):
         if should_continue:
             research_results = str(state["researcher_history"][-1].content)
             parsed_results = self._parse_research_results(research_results)
-            self.research_findings.extend([Source(**item) for item in parsed_results])
+            current_findings = state.get("research_findings", [])
+            updated_findings = current_findings + [Source(**item) for item in parsed_results]
 
             return ResearcherState(
                 current_iteration=1,
                 researcher_history=[response],
                 should_continue=True,
+                research_findings=updated_findings,
             )
 
         sub_agent_call_id = state.get("sub_agent_call_id", "")
@@ -178,6 +179,7 @@ class Researcher(BaseNode):
             should_continue=False,
             planned_subtasks=[],
             sub_agent_call_id="",
+            research_findings=state.get("research_findings", []),
         )
 
     def _handle_research_handoff(
@@ -185,7 +187,7 @@ class Researcher(BaseNode):
     ) -> ResearcherState:
         iteration_limit_message = AIMessage(content=MAX_ITERATION_REACHED)
 
-        synthesis = self._format_research_synthesis(self.research_findings)
+        synthesis = self._format_research_synthesis(state.get("research_findings", []))
 
         sub_agent_call_id = state.get("sub_agent_call_id", "")
 
@@ -200,6 +202,7 @@ class Researcher(BaseNode):
             should_continue=False,
             planned_subtasks=[],
             sub_agent_call_id="",
+            research_findings=state.get("research_findings", []),
         )
 
     def _execute(self, state: ResearcherState, config: RunnableConfig) -> ResearcherState:
