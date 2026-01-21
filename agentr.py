@@ -16,6 +16,17 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 from client import OpenAIClient
 from config import EnvConfig
 from graph.agent import AgentR
+from graph.exceptions import (
+    AgentInitializationError,
+    ConfigurationError,
+    ClientInitializationError,
+    ValidationError,
+    NodeExecutionError,
+    GraphExecutionError,
+    ResearchError,
+    ToolError,
+)
+from pydantic import ValidationError as PydanticValidationError
 from tools import ToolName
 
 
@@ -62,7 +73,7 @@ def initialize_agent(
             os.environ["TAVILY_API_KEY"] = env_config.tavily_api_key
             print("✓ Tavily API key loaded from configuration")
 
-    except Exception as e:
+    except (PydanticValidationError, ConfigurationError) as e:
         print(f"⚠  Configuration error: {e}")
         print("\nConfiguration options:")
         print("1. Environment variables:")
@@ -79,6 +90,9 @@ def initialize_agent(
         print("   Create a .env.dev file in the project root")
         print("   with the above variables")
         sys.exit(1)
+    except Exception as e:
+        print(f"⚠  Unexpected error during configuration: {e}")
+        sys.exit(1)
 
     try:
         # Initialize OpenAI client
@@ -92,7 +106,7 @@ def initialize_agent(
         )
         print("✓ AgentR initialized successfully")
         return agent
-    except Exception as e:
+    except (ClientInitializationError, AgentInitializationError, ValidationError) as e:
         print(f"✗ Failed to initialize AgentR: {e}")
         if "TAVILY_API_KEY" in str(e):
             print("\nℹ️  Note: Tavily API key is not set.")
@@ -100,6 +114,9 @@ def initialize_agent(
             print(
                 "Set TAVILY_API_KEY environment variable for full research capabilities."
             )
+        sys.exit(1)
+    except Exception as e:
+        print(f"✗ Unexpected error during AgentR initialization: {e}")
         sys.exit(1)
 
 
@@ -111,11 +128,13 @@ def run_single_query(agent: AgentR, query: str) -> None:
     try:
         response = agent.invoke(query)
         print(f"\n📝 Response:\n{response}")
-    except Exception as e:
+    except (NodeExecutionError, GraphExecutionError, ResearchError, ToolError, ValidationError) as e:
         print(f"\n✗ Error processing query: {e}")
         if "TAVILY_API_KEY" in str(e):
             print("\nℹ️  Note: Tavily API key required for web search.")
             print("Set TAVILY_API_KEY environment variable for research capabilities.")
+    except Exception as e:
+        print(f"\n✗ Unexpected error processing query: {e}")
 
 
 def interactive_mode(agent: AgentR) -> None:
