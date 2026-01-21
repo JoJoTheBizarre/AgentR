@@ -1,6 +1,9 @@
 """Tool manager for centralized tool registration and retrieval."""
 
+import logging
 from typing import ClassVar, Union
+
+logger = logging.getLogger(__name__)
 
 from graph.exceptions import ToolInitializationError
 from langchain_core.tools import StructuredTool
@@ -36,7 +39,7 @@ class ToolManager:
             raise ToolInitializationError(f"Tool '{tool_name}' is already registered")
 
         cls._registry[tool_name] = tool_class
-        print(f"Registered tool: {tool_name}")
+        logger.debug(f"Registered tool: {tool_name}")
 
     @classmethod
     def get_tool(cls, name: ToolName | str) -> BaseTool:
@@ -120,5 +123,4 @@ class ToolManager:
         cls.register_tool(WebSearchTool)
 
         cls._initialized = True
-        print("ToolManager initialized with default tools")
-        # TODO: Replace with proper logging
+        logger.info("ToolManager initialized with default tools")
