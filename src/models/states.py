@@ -62,5 +62,5 @@ class ResearcherState(TypedDict):
     researcher_history: list[BaseMessage]
     should_continue: bool
 
-    research_id: NotRequired[str]
+    sub_agent_call_id: NotRequired[str]
     message_history: NotRequired[list[BaseMessage]]

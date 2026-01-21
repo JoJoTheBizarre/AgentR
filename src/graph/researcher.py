@@ -168,16 +168,16 @@ class Researcher(BaseNode):
                 should_continue=True,
             )
 
-        research_id = state.get("research_id", "")
+        sub_agent_call_id = state.get("sub_agent_call_id", "")
 
         return ResearcherState(
             message_history=[
-                ToolMessage(content=str(response.content), tool_call_id=research_id)
+                ToolMessage(content=str(response.content), tool_call_id=sub_agent_call_id)
             ],
             researcher_history=[response],
             should_continue=False,
             planned_subtasks=[],
-            research_id="",
+            sub_agent_call_id="",
         )
 
     def _handle_research_handoff(
@@ -187,19 +187,19 @@ class Researcher(BaseNode):
 
         synthesis = self._format_research_synthesis(self.research_findings)
 
-        research_id = state.get("research_id", "")
+        sub_agent_call_id = state.get("sub_agent_call_id", "")
 
         return ResearcherState(
             message_history=[
                 ToolMessage(
                     content=synthesis,
-                    tool_call_id=research_id,
+                    tool_call_id=sub_agent_call_id,
                 )
             ],
             researcher_history=[iteration_limit_message],
             should_continue=False,
             planned_subtasks=[],
-            research_id="",
+            sub_agent_call_id="",
         )
 
     def _execute(self, state: ResearcherState, config: RunnableConfig) -> ResearcherState:
