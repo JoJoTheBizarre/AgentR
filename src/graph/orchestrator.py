@@ -2,7 +2,8 @@ from datetime import UTC, datetime
 
 from client import OpenAIClient
 from graph.base import BaseNode
-from langchain_core.messages import AIMessage, BaseMessage, SystemMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain_core.runnables import RunnableConfig
 from models.states import OrchestratorState
 from prompt_templates import SYS_ORCHESTRATOR
 from tools import ShouldResearch, ToolManager, ToolName
@@ -51,7 +52,9 @@ class OrchestratorNode(BaseNode):
     def _just_started(messages: list[BaseMessage]) -> bool:
         return isinstance(messages[-1], HumanMessage)
 
-    def _execute(self, state: OrchestratorState) -> OrchestratorState:
+    def _execute(
+        self, state: OrchestratorState, config: RunnableConfig
+    ) -> OrchestratorState:
         """Execute the orchestrator logic.
 
         Case 1: Initial decision - determine if research is needed
@@ -63,12 +66,13 @@ class OrchestratorNode(BaseNode):
         Returns:
             Updated orchestrator state
         """
+        _ = config
         system_message = SystemMessage(content=self._preprocess_system_prompt())
         message_history = state.get("message_history", [])
         messages = [system_message, *message_history]
 
         # that mean we just initiated the graph
-        if self._just_started:
+        if self._just_started(messages):
             return self._handle_initial_decision(state, messages)
         # that means we invoked research and now its time for synthesis
         return self._handle_research_synthesis(state, messages)
