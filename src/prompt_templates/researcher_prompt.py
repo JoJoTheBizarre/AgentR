@@ -83,5 +83,4 @@ Total Sources Gathered: {total_sources}
 {formatted_sources}
 
 ---
-Research Status: Complete
-Iteration Limit: Reached"""
+Research Status: Complete"""
