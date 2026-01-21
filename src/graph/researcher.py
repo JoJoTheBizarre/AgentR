@@ -203,10 +203,10 @@ class Researcher(BaseNode):
         )
 
     def _execute(self, state: ResearcherState, config: RunnableConfig) -> ResearcherState:
-        configurables = config.get("configurable")
-        if not configurables:
-            raise AgentExecutionError("could not find max_iteration config")
-        max_iterations = configurables.get("max_iterations")
+        configurables = config.get("configurable", {})
+        max_iterations = configurables.get("max_iterations", 5)
+        if not isinstance(max_iterations, int):
+            raise ValidationError(f"max_iterations must be int, got {type(max_iterations).__name__}")
         current_iteration = state.get("current_iteration", 0)
         system_message = SystemMessage(content=self._preprocess_system_prompt())
         researcher_history = state.get("researcher_history", [])
