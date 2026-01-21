@@ -1,5 +1,5 @@
 from client import OpenAIClient
-from config import EnvConfig
+from config import EnvConfig, get_default_configs
 from langchain_core.runnables import RunnableConfig
 from langfuse import Langfuse
 from langfuse.langchain import CallbackHandler
@@ -23,24 +23,24 @@ class AgentR:
         env_config: EnvConfig,
         researcher_tools: list[ToolName | str] | None = None,
     ) -> None:
+        #set up the client
         self.client = llm_client
+        #set up the research tools
         self.researcher_tools = researcher_tools or [
             ToolName.WEB_SEARCH
         ]  # supports web_search by default
+        #set up the callback handler for langfuse
         lf_callback = CallbackHandler()
         lf_callback.client = Langfuse(
             public_key=env_config.langfuse_public_key,
             secret_key=env_config.langfuse_secret_key,
             base_url=env_config.langfuse_base_url,
         )
-        print("initialized yet")
-        self.config = RunnableConfig(callbacks=[lf_callback])
+        #set up runtime configs
+        self.config = RunnableConfig(
+            callbacks=[lf_callback], configurable=get_default_configs()
+        )
         self.graph = self._build_graph()
-
-    def draw_save_mermaid_graph(self):
-        mermaid_code = self.graph.get_graph().draw_mermaid_png()
-        with open("graph_diagram.png", "wb") as f:
-            f.write(mermaid_code)
 
     def _build_initial_state(self, request: str) -> AgentState:
         """Create initial state for the agent graph."""
@@ -48,18 +48,17 @@ class AgentR:
             query=request,
             response="",
             message_history=[],
-            should_research=False,
+            should_delegate=False,
             should_continue=False,
             current_iteration=0,
             planned_subtasks=[],
-            research_id="",
+            sub_agent_call_id="",
             researcher_history=[],
         )
 
     def invoke(self, request: str) -> str:
-        self.draw_save_mermaid_graph()
         initial_state = self._build_initial_state(request)
-        agent_response = self.graph.invoke(initial_state, config=self.config)
+        agent_response = self.graph.invoke(initial_state, self.config)
         literal_response = agent_response.get("response")
         if literal_response:
             return literal_response
@@ -108,7 +107,7 @@ class AgentR:
 
     @staticmethod
     def _should_continue(state: AgentState):
-        if state.get("research_id"):
+        if state.get("sub_agent_call_id"):
             return NodeName.RESEARCHER
         else:
             return END
