@@ -18,16 +18,14 @@ from config import EnvConfig
 from graph.agent import AgentR
 from graph.exceptions import (
     AgentInitializationError,
-    ConfigurationError,
     ClientInitializationError,
-    ValidationError,
-    NodeExecutionError,
+    ConfigurationError,
     GraphExecutionError,
     ResearchError,
     ToolError,
+    ValidationError,
 )
 from pydantic import ValidationError as PydanticValidationError
-from tools import ToolName
 
 
 def initialize_agent(
@@ -128,7 +126,7 @@ def run_single_query(agent: AgentR, query: str) -> None:
     try:
         response = agent.invoke(query)
         print(f"\n📝 Response:\n{response}")
-    except (NodeExecutionError, GraphExecutionError, ResearchError, ToolError, ValidationError) as e:
+    except (GraphExecutionError, ResearchError, ToolError, ValidationError) as e:
         print(f"\n✗ Error processing query: {e}")
         if "TAVILY_API_KEY" in str(e):
             print("\nℹ️  Note: Tavily API key required for web search.")

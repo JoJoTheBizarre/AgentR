@@ -1,7 +1,19 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Generic, TypeVar
+
+from langchain_core.messages import BaseMessage
+from langchain_core.runnables import RunnableConfig
+from typing_extensions import TypedDict
 
 from .nodes import NodeName
+
+
+class BaseState(TypedDict):
+    message_history: list[BaseMessage]
+
+
+T = TypeVar("T", bound=BaseState)
+S = TypeVar("S", bound=BaseState)
 
 
 class NodeExecutionError(Exception):
@@ -15,23 +27,23 @@ class NodeExecutionError(Exception):
         )
 
 
-class BaseNode(ABC):
+class BaseNode(ABC, Generic[T, S]):
     """Abstract base class for all graph nodes."""
 
     @property
     @abstractmethod
     def node_name(self) -> NodeName:
         """Return the name of this node."""
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def _execute(self, *args: Any, **kwargs: Any) -> Any:
+    def _execute(self, state: T, config: RunnableConfig) -> S:
         """Execute the node's logic. To be implemented by subclasses."""
-        pass
+        raise NotImplementedError
 
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+    def __call__(self, state: T, config: RunnableConfig) -> S:
         """Wrapper around _execute that adds node name to error messages."""
         try:
-            return self._execute(*args, **kwargs)
+            return self._execute(state, config)
         except Exception as e:
             raise NodeExecutionError(self.node_name, e) from e

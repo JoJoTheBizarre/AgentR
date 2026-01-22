@@ -107,15 +107,14 @@ class AgentR:
 
     @staticmethod
     def _should_continue(state: AgentState):
-        if state.get("sub_agent_call_id"):
+        if state.get("should_delegate"):
             return NodeName.RESEARCHER
         else:
             return END
 
     @staticmethod
     def _should_continue_research(state: AgentState):
-        should_continue = state.get("should_continue")
-        if should_continue:
+        if state.get("should_continue"):
             return NodeName.TOOL_NODE
         else:
             return NodeName.ORCHESTRATOR

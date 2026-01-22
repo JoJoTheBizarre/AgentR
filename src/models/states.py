@@ -28,15 +28,12 @@ class AgentState(TypedDict):
 
     should_delegate: bool
     should_continue: bool
-    current_iteration: Annotated[int, add]
+    current_iteration: int
 
     planned_subtasks: list[str]
 
     sub_agent_call_id: str
     researcher_history: Annotated[list[BaseMessage], add]
-
-
-# the substate's are mainly for typing the nodes only thats why im not adding the reducers
 
 
 class PreprocessorState(TypedDict):
@@ -46,22 +43,20 @@ class PreprocessorState(TypedDict):
 
 class OrchestratorState(TypedDict):
     message_history: list[BaseMessage]
-    should_research: bool
+    should_delegate: bool
 
     planned_subtasks: NotRequired[list[str]]
 
     sub_agent_call_id: NotRequired[str]
-    research_findings: NotRequired[Sources]
     response: NotRequired[str]
 
 
 class ResearcherState(TypedDict):
+    current_iteration: NotRequired[int]
     planned_subtasks: NotRequired[list[str]]
 
-    current_iteration: NotRequired[int]
     researcher_history: list[BaseMessage]
     should_continue: bool
 
     sub_agent_call_id: NotRequired[str]
     message_history: NotRequired[list[BaseMessage]]
-    research_findings: NotRequired[Sources]
