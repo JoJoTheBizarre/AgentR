@@ -1,5 +1,6 @@
 from graph.base import BaseNode
 from langchain_core.messages import HumanMessage
+from langchain_core.runnables import RunnableConfig
 from models.states import PreprocessorState
 
 from .exceptions import StateError
@@ -18,18 +19,11 @@ class QueryProcessor(BaseNode):
     def node_name(self) -> NodeName:
         return NodeName.PREPROCESSOR
 
-    def _execute(self, state: PreprocessorState) -> PreprocessorState:
-        """Add the user query to message history as a HumanMessage.
-
-        Args:
-            state: Current preprocessor state containing the query
-
-        Returns:
-            Updated state with query added to message history
-
-        Raises:
-            StateError: If query is missing from state
-        """
+    def _execute(
+        self, state: PreprocessorState, config: RunnableConfig
+    ) -> PreprocessorState:
+        """Add the user query to message history as a HumanMessage."""
+        _ = config
         query = state.get("query")
         if not query:
             raise StateError(

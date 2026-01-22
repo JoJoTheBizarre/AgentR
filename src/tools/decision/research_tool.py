@@ -14,9 +14,9 @@ class ResearchDecisionTool(BaseTool):
 
     TOOL_NAME = ToolName.RESEARCH_TOOL
     TOOL_DESCRIPTION = (
-        "Use this tool to determine if additional research is needed to answer the "
-        "user's query. If research is needed, provide a list of specific subtasks "
-        "to be researched."
+        "Use this tool to determine if calling the research subagent is"
+        "needed to answer the user's query. If research is needed, "
+        "provide a list of specific subtasks to be researched."
     )
 
     @property

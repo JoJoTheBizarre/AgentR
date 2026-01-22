@@ -22,4 +22,4 @@ class RuntimeConfig(TypedDict):
     max_iterations: int
 
 def get_default_configs() -> dict[str, Any]:
-    return dict(RuntimeConfig(max_iterations=5))
+    return dict(RuntimeConfig(max_iterations=4))
