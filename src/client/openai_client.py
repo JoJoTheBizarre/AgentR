@@ -106,16 +106,6 @@ class OpenAIClient:
             )
             response = llm_with_tools.invoke(input=messages)
 
-            # Log token usage if available
-            if (
-                hasattr(response, "response_metadata")
-                and "token_usage" in response.response_metadata
-            ):
-                tokens = response.response_metadata["token_usage"]
-                logger.debug(
-                    f"Structured API call successful: {tokens.get('total_tokens', 'N/A')} tokens"
-                )
-
             return response
         except Exception as e:
             logger.error(f"Structured output API call failed: {type(e).__name__}")

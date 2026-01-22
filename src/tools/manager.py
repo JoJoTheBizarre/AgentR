@@ -113,11 +113,9 @@ class ToolManager:
         if cls._initialized:
             return
 
-        # Import here to avoid circular imports
         from .decision.research_tool import ResearchDecisionTool
         from .execution.web_search_tool import WebSearchTool
 
-        # Register default tools
         cls.register_tool(ResearchDecisionTool)
         cls.register_tool(WebSearchTool)
 
