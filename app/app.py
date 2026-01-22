@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 app = typer.Typer()
 
 
-#factory to create the agent
+# factory to create the agent
 def _init_agent(tracing: bool, env_config: EnvConfig | None = None) -> AgentR:
     if env_config is None:
         env_config = EnvConfig()  # type: ignore
