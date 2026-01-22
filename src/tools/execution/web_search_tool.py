@@ -9,10 +9,12 @@ from tavily import AsyncTavilyClient, TavilyClient
 from src.exceptions import ToolInitializationError
 from src.models.states import Source, SourceType
 
-logger = logging.getLogger(__name__)
-
 from ..base.base_tool import BaseTool
 from ..names import ToolName
+
+logger = logging.getLogger(__name__)
+
+
 
 
 class SearchInput(BaseModel):

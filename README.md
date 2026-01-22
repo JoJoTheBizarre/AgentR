@@ -68,18 +68,6 @@ cp .env.dev.example .env.dev
 
 ### 2. Environment Configuration
 Edit `.env.dev` with your API keys:
-```bash
-API_KEY=your_openai_or_deepseek_api_key
-API_URL=https://api.deepseek.com  # or OpenAI endpoint
-MODEL_NAME=deepseek-chat  # or gpt-4, gpt-3.5-turbo
-
-TAVILY_API_KEY=your_tavily_api_key  # for web search
-
-# Optional: Langfuse for observability
-LANGFUSE_BASE_URL=http://localhost:3000/
-LANGFUSE_SECRET_KEY=your_langfuse_secret_key
-LANGFUSE_PUBLIC_KEY=your_langfuse_public_key
-```
 
 ### 3. Usage
 Run the agent via the CLI:
@@ -125,16 +113,7 @@ poetry run python app/app.py "Climate change impact on agriculture" true
 - Ensure your API keys are correctly set in `.env.dev`
 - For DeepSeek/OpenAI: Verify `API_KEY`, `API_URL`, and `MODEL_NAME`
 - For Tavily: Get a free API key from [tavily.com](https://tavily.com)
-
-**2. Module Import Errors**
-```bash
-# If you see "ModuleNotFoundError", ensure you're using poetry:
-poetry run python app/app.py "your query" false
-
-# Or activate the virtual environment first:
-poetry shell
-python app/app.py "your query" false
-```
+- langfuse server needs to be up
 
 **3. Research Query Failures**
 - If research queries fail, check your Tavily API key
@@ -149,21 +128,4 @@ python app/app.py "your query" false
 - Complex research queries may take longer
 - The agent has a default max iteration limit of 4 research cycles
 
-## 🧪 Testing
-
-Test the agent with different query types:
-
-```bash
-# Direct answer (no research needed)
-poetry run python app/app.py "Explain the Plan-and-Execute architecture" false
-
-# Research query (requires Tavily API key)
-poetry run python app/app.py "Recent breakthroughs in AI alignment 2025" false
-
-# With observability
-poetry run python app/app.py "Impact of renewable energy on climate change" true
 ```
-
-## 📚 Development
-
-For development setup, see the source code documentation in each module.

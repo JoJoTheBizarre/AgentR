@@ -16,6 +16,10 @@ class EnvConfig(BaseSettings):
     langfuse_public_key: str
     langfuse_secret_key: str
 
+    # Logging configuration with defaults
+    log_level: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+    environment: str = "development"  # development, production, staging
+
     class Config:
         env_file = ".env.dev"
         extra = "allow"
@@ -25,6 +29,7 @@ class EnvConfig(BaseSettings):
         super().model_post_init(__context)
         logger.info(f"Configuration loaded from {self.Config.env_file}")
         logger.info(f"Model: {self.model_name}, API URL: {self.api_url}")
+        logger.info(f"Environment: {self.environment}, Log level: {self.log_level}")
 
         # Log warnings for potentially missing optional configurations
         if not self.tavily_api_key:
