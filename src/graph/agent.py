@@ -1,15 +1,16 @@
-from client import OpenAIClient
-from config import EnvConfig, get_default_configs
 from langchain_core.runnables import RunnableConfig
 from langfuse import Langfuse
 from langfuse.langchain import CallbackHandler
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode
-from models.states import AgentState
-from tools import ToolManager, ToolName
 
-from .exceptions import ResponseError
+from src.client import OpenAIClient
+from src.config import EnvConfig, get_default_configs
+from src.exceptions import ResponseError
+from src.models.states import AgentState
+from src.tools import ToolManager, ToolName
+
 from .nodes import NodeName
 from .orchestrator import OrchestratorNode
 from .process_query import QueryProcessor
@@ -18,29 +19,29 @@ from .researcher import Researcher
 
 class AgentR:
     def __init__(
-        self,
-        llm_client: OpenAIClient,
-        env_config: EnvConfig,
-        researcher_tools: list[ToolName | str] | None = None,
+        self, llm_client: OpenAIClient, env_config: EnvConfig, tracing: bool = False
     ) -> None:
-        #set up the client
         self.client = llm_client
-        #set up the research tools
-        self.researcher_tools = researcher_tools or [
-            ToolName.WEB_SEARCH
-        ]  # supports web_search by default
-        #set up the callback handler for langfuse
+        self.researcher_tools = [ToolName.WEB_SEARCH]
+        self.callbacks = []
+
+        if tracing:
+            self._setup_tracing(env_config)
+
+        self.config = RunnableConfig(
+            callbacks=self.callbacks, configurable=get_default_configs()
+        )
+
+        self.graph = self._build_graph()
+
+    def _setup_tracing(self, env_config: EnvConfig):
         lf_callback = CallbackHandler()
         lf_callback.client = Langfuse(
             public_key=env_config.langfuse_public_key,
             secret_key=env_config.langfuse_secret_key,
             base_url=env_config.langfuse_base_url,
         )
-        #set up runtime configs
-        self.config = RunnableConfig(
-            callbacks=[lf_callback], configurable=get_default_configs()
-        )
-        self.graph = self._build_graph()
+        self.callbacks.append(lf_callback)
 
     def _build_initial_state(self, request: str) -> AgentState:
         """Create initial state for the agent graph."""

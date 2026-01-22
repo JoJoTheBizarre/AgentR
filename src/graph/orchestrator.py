@@ -1,12 +1,13 @@
 from datetime import UTC, datetime
 
-from client import OpenAIClient
-from graph.base import BaseNode
 from langchain_core.messages import SystemMessage
 from langchain_core.runnables import RunnableConfig
-from models.states import OrchestratorState
-from prompt_templates import SYS_ORCHESTRATOR
-from tools import ShouldResearch, ToolManager, ToolName
+
+from src.client import OpenAIClient
+from src.graph.base import BaseNode
+from src.models.states import OrchestratorState
+from src.prompt_templates import SYS_ORCHESTRATOR
+from src.tools import ShouldResearch, ToolManager, ToolName
 
 from .nodes import NodeName
 from .utils import extract_text_response, is_tool_call

@@ -1,10 +1,13 @@
 import json
+import logging
 
 from langchain_core.messages import AIMessage
-from models.states import Source, SourceType
-from prompt_templates import RESEARCH_SYNTHESIS_TEMPLATE
 
-from .exceptions import ValidationError
+from src.exceptions import ValidationError
+from src.models.states import Source, SourceType
+from src.prompt_templates import RESEARCH_SYNTHESIS_TEMPLATE
+
+logger = logging.getLogger(__name__)
 
 
 def is_tool_call(response: AIMessage) -> bool:
@@ -73,6 +76,9 @@ def validate_source_structure(item: dict, index: int) -> None:
     try:
         SourceType(item["type"])
     except ValueError as e:
+        logger.error(
+            f"Source validation failed at index {index}: invalid type '{item['type']}'"
+        )
         raise ValidationError(
             f"Source at index {index} has invalid type: {item['type']}. "
             f"Expected one of: {[e.value for e in SourceType]}"
@@ -100,9 +106,13 @@ def parse_research_results(results_str: str) -> list[dict]:
     try:
         parsed = json.loads(results_str)
     except json.JSONDecodeError as e:
+        logger.error(f"JSON decode error in research results: {e.msg}")
         raise ValidationError(f"Invalid JSON in research results: {e}") from e
 
     if not isinstance(parsed, list):
+        logger.error(
+            f"Research results validation failed: expected list, got {type(parsed).__name__}"
+        )
         raise ValidationError(f"Expected list of sources, got {type(parsed).__name__}")
 
     validated_sources = []

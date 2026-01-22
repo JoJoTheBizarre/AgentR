@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar
 
@@ -5,7 +6,11 @@ from langchain_core.messages import BaseMessage
 from langchain_core.runnables import RunnableConfig
 from typing_extensions import TypedDict
 
+from src.exceptions import NodeExecutionError
+
 from .nodes import NodeName
+
+logger = logging.getLogger(__name__)
 
 
 class BaseState(TypedDict):
@@ -14,17 +19,6 @@ class BaseState(TypedDict):
 
 T = TypeVar("T", bound=BaseState)
 S = TypeVar("S", bound=BaseState)
-
-
-class NodeExecutionError(Exception):
-    """Exception raised when a node execution fails."""
-
-    def __init__(self, node_name: NodeName, original_exception: Exception) -> None:
-        self.node_name = node_name
-        self.original_exception = original_exception
-        super().__init__(
-            f"Node '{node_name.value}' execution failed: {original_exception}"
-        )
 
 
 class BaseNode(ABC, Generic[T, S]):
@@ -46,4 +40,7 @@ class BaseNode(ABC, Generic[T, S]):
         try:
             return self._execute(state, config)
         except Exception as e:
+            logger.error(
+                f"Node '{self.node_name.value}' execution failed", exc_info=True
+            )
             raise NodeExecutionError(self.node_name, e) from e

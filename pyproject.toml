@@ -19,6 +19,7 @@ dependencies = [
     "langchain (>=1.2.3,<2.0.0)",
     "langchain-openai (>=1.1.7,<2.0.0)",
     "grandalf (>=0.8,<0.9)",
+    "typer (>=0.21.1,<0.22.0)",
 ]
 
 [build-system]
