@@ -3,7 +3,6 @@ from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
 from models.states import PreprocessorState
 
-from .exceptions import StateError
 from .nodes import NodeName
 
 
@@ -26,8 +25,6 @@ class QueryProcessor(BaseNode):
         _ = config
         query = state.get("query")
         if not query:
-            raise StateError(
-                message="Could not find user query in state", state_field="query"
-            )
+            raise Exception("Could not find user query in state")
 
         return PreprocessorState(message_history=[HumanMessage(content=query)])

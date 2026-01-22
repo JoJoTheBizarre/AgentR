@@ -22,11 +22,58 @@ class SearchInput(BaseModel):
     )
 
 
+def get_async_tavily_client() -> AsyncTavilyClient:
+    """Initialize and return an async Tavily client."""
+    api_key = os.getenv("TAVILY_API_KEY")
+    if not api_key:
+        raise ToolInitializationError(
+            "TAVILY_API_KEY environment variable is not set. "
+        )
+    return AsyncTavilyClient(api_key=api_key)
+
+def get_tavily_client() -> TavilyClient:
+    """Initialize and return a Tavily client."""
+    api_key = os.getenv("TAVILY_API_KEY")
+    if not api_key:
+        raise ToolInitializationError(
+            "TAVILY_API_KEY environment variable is not set. "
+        )
+    return TavilyClient(api_key=api_key)
+
+
+def _format_tavily_response(response: dict[str, Any]) -> list[Source]:
+    results = response.get("results", [])
+    sources = [
+        Source(
+            source=item.get("url", ""),
+            content=item.get("content", ""),
+            type=SourceType.WEB,
+        )
+        for item in results
+    ]
+    return sources
+
+
+def web_search_sync(query: str) -> list[Source]:
+    """Synchronous web search using Tavily API."""
+    client = get_tavily_client()
+    response = client.search(query=query)
+    return _format_tavily_response(response)
+
+
+async def web_search_async(query: str) -> list[Source]:
+    """Asynchronous web search using Tavily API."""
+    client = get_async_tavily_client()
+    response = await client.search(query=query)
+    return _format_tavily_response(response)
+
+
 class WebSearchTool(BaseTool):
     """Execution tool for web search using Tavily API."""
 
     TOOL_NAME = ToolName.WEB_SEARCH
-    TOOL_DESCRIPTION = "Search the web for up to date information using nature language"
+    TOOL_DESCRIPTION = ("Search the web for up to date information using natural"
+                        "language, results are returned with their source URL")
 
     @property
     def name(self) -> str:
@@ -59,60 +106,3 @@ class WebSearchTool(BaseTool):
 
     def get_coroutine(self):
         return web_search_async
-
-
-def get_tavily_client() -> TavilyClient:
-    """Initialize and return a Tavily client."""
-    api_key = os.getenv("TAVILY_API_KEY")
-    if not api_key:
-        raise ToolInitializationError(
-            "TAVILY_API_KEY environment variable is not set. "
-        )
-    return TavilyClient(api_key=api_key)
-
-
-def get_async_tavily_client() -> AsyncTavilyClient:
-    """Initialize and return an async Tavily client."""
-    api_key = os.getenv("TAVILY_API_KEY")
-    if not api_key:
-        raise ToolInitializationError(
-            "TAVILY_API_KEY environment variable is not set. "
-        )
-    return AsyncTavilyClient(api_key=api_key)
-
-
-def _format_tavily_response(response: dict[str, Any]) -> list[Source]:
-    results = response.get("results", [])
-    sources = [
-        Source(
-            source=item.get("url", ""),
-            content=item.get("content", ""),
-            type=SourceType.WEB,
-        )
-        for item in results
-    ]
-    return sources
-
-
-def web_search_sync(query: str) -> list[Source]:
-    """Synchronous web search using Tavily API."""
-    client = get_tavily_client()
-    response = client.search(query=query)
-    return _format_tavily_response(response)
-
-
-async def web_search_async(query: str) -> list[Source]:
-    """Asynchronous web search using Tavily API."""
-    client = get_async_tavily_client()
-    response = await client.search(query=query)
-    return _format_tavily_response(response)
-
-
-def web_search_factory() -> StructuredTool:
-    return StructuredTool.from_function(
-        name=WebSearchTool.TOOL_NAME,
-        description=WebSearchTool.TOOL_DESCRIPTION,
-        args_schema=SearchInput,
-        func=web_search_sync,
-        coroutine=web_search_async,
-    )

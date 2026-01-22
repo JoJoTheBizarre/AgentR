@@ -1,5 +1,3 @@
-"""Base tool abstraction for consistent tool creation and management."""
-
 from abc import ABC, abstractmethod
 from typing import Any
 
