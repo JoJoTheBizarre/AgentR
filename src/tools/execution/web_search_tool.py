@@ -15,8 +15,6 @@ from ..names import ToolName
 logger = logging.getLogger(__name__)
 
 
-
-
 class SearchInput(BaseModel):
     """Input schema for the web search tool."""
 
@@ -54,6 +52,10 @@ def get_tavily_client() -> TavilyClient:
 
 def _format_tavily_response(response: dict[str, Any]) -> list[Source]:
     results = response.get("results", [])
+    # Ensure results is a list
+    if not isinstance(results, list):
+        return []
+
     sources = [
         Source(
             source=item.get("url", ""),
