@@ -12,8 +12,6 @@ from .names import ToolName
 logger = logging.getLogger(__name__)
 
 
-
-
 class ToolManager:
     """Central registry for managing tools in AgentR.
 

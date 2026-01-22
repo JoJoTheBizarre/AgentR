@@ -9,14 +9,22 @@ class ShouldResearch(BaseModel):
     subtasks: list[str]
 
 
+def research_subagent(
+    subtasks: list[str],
+) -> ShouldResearch:
+    return ShouldResearch(
+        subtasks=subtasks,
+    )
+
+
 class ResearchDecisionTool(BaseTool):
-    """Decision tool for determining if research is needed and planning subtasks."""
+    """Decision tool for handling research agent handoff"""
 
     TOOL_NAME = ToolName.RESEARCH_TOOL
     TOOL_DESCRIPTION = (
-        "Use this tool to determine if calling the research subagent is"
-        "needed to answer the user's query. If research is needed, "
-        "provide a list of specific subtasks to be researched."
+        "use this tool to ask help from a research subagent by providing subtasks "
+        "to search for, make sure that the subtasks are independent from each other"
+        "and provide actionable information to respond to the user's question"
     )
 
     @property
@@ -31,41 +39,14 @@ class ResearchDecisionTool(BaseTool):
     def args_schema(self):
         return ShouldResearch
 
-    @property
-    def return_direct(self) -> bool:
-        return True
-
     def create_tool(self) -> StructuredTool:
         """Create and return a StructuredTool instance."""
         return StructuredTool.from_function(
-            func=should_research,
+            func=research_subagent,
             name=self.name,
             description=self.description,
             args_schema=self.args_schema,
-            return_direct=self.return_direct,
         )
 
     def get_func(self):
-        return should_research
-
-
-def should_research(
-    subtasks: list[str],
-) -> ShouldResearch:
-    return ShouldResearch(
-        subtasks=subtasks,
-    )
-
-
-def research_tool_factory() -> StructuredTool:
-    """
-    Factory function that creates a structured research-decision tool
-    usable by LLMs.
-    """
-    return StructuredTool.from_function(
-        func=should_research,
-        name=ResearchDecisionTool.TOOL_NAME,
-        description=ResearchDecisionTool.TOOL_DESCRIPTION,
-        args_schema=ShouldResearch,
-        return_direct=True,
-    )
+        return research_subagent
