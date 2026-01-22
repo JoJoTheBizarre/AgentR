@@ -1,7 +1,5 @@
 from datetime import UTC, datetime
 
-from client import OpenAIClient
-from graph.base import BaseNode
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -10,9 +8,12 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.runnables import RunnableConfig
-from models.states import ResearcherState, Source
-from prompt_templates import MAX_ITERATION_REACHED, RESEARCH_PROMPT
-from tools import ToolManager, ToolName
+
+from src.client import OpenAIClient
+from src.graph.base import BaseNode
+from src.models.states import ResearcherState, Source
+from src.prompt_templates import MAX_ITERATION_REACHED, RESEARCH_PROMPT
+from src.tools import ToolManager, ToolName
 
 from .nodes import NodeName
 from .utils import (
@@ -27,9 +28,7 @@ class Researcher(BaseNode):
 
     NODE_NAME = NodeName.RESEARCHER
 
-    def __init__(
-        self, llm_client: OpenAIClient, tool_names: list[ToolName | str]
-    ) -> None:
+    def __init__(self, llm_client: OpenAIClient, tool_names: list[ToolName]) -> None:
         self.client = llm_client
         self.tool_names = tool_names
         self._tools = [ToolManager.get_structured_tool(name) for name in tool_names]
@@ -125,11 +124,11 @@ class Researcher(BaseNode):
         self, state: ResearcherState, response: AIMessage
     ) -> ResearcherState:
         """Continue research with new findings."""
-        #extract and parse latest research results
+        # extract and parse latest research results
         last_message_content = str(state["researcher_history"][-1].content)
         parsed_results = parse_research_results(last_message_content)
 
-        #accumulate findings
+        # accumulate findings
         new_sources = [Source(**item) for item in parsed_results]
         self.research_findings.extend(new_sources)
 
@@ -149,8 +148,7 @@ class Researcher(BaseNode):
         return ResearcherState(
             message_history=[
                 ToolMessage(
-                    content=str(response.content),
-                    tool_call_id=sub_agent_call_id
+                    content=str(response.content), tool_call_id=sub_agent_call_id
                 )
             ],
             researcher_history=[response],

@@ -1,7 +1,8 @@
-from graph.base import BaseNode
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
-from models.states import PreprocessorState
+
+from src.graph.base import BaseNode
+from src.models.states import PreprocessorState
 
 from .nodes import NodeName
 

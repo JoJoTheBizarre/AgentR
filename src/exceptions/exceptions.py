@@ -1,4 +1,7 @@
 # ===== Agent Exceptions =====
+from src.graph.nodes import NodeName
+
+
 class AgentRError(Exception):
     """Base exception for all AgentR errors."""
 
@@ -15,6 +18,7 @@ class ClientInitializationError(Exception):
     """Exception raised when LLM client initialization fails."""
 
     pass
+
 
 class AgentExecutionError(AgentRError):
     """Base exception for agent execution errors."""
@@ -46,3 +50,15 @@ class ValidationError(AgentRError):
     """Exception raised when validation fails."""
 
     pass
+
+
+# ===== Node Execution Errors =====
+class NodeExecutionError(Exception):
+    """Exception raised when a node execution fails."""
+
+    def __init__(self, node_name: NodeName, original_exception: Exception) -> None:
+        self.node_name = node_name
+        self.original_exception = original_exception
+        super().__init__(
+            f"Node '{node_name.value}' execution failed: {original_exception}"
+        )
