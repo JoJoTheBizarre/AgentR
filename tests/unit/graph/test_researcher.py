@@ -1,6 +1,3 @@
-"""
-Tests for Researcher node.
-"""
 
 from unittest.mock import Mock, patch
 

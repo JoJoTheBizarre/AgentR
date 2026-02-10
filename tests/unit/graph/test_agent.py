@@ -1,7 +1,3 @@
-"""
-Tests for AgentR main agent class.
-"""
-
 from unittest.mock import Mock, patch
 
 import pytest

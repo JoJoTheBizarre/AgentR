@@ -208,4 +208,4 @@ class TestToolManager:
         assert tool_str.name == ToolName.WEB_SEARCH
 
         # Should be the same tool
-        assert type(tool) == type(tool_str)
+        assert type(tool) is type(tool_str)

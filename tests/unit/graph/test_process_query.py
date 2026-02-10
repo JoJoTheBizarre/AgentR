@@ -1,6 +1,3 @@
-"""
-Tests for QueryProcessor node.
-"""
 
 import pytest
 from langchain_core.messages import HumanMessage

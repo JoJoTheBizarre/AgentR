@@ -22,17 +22,7 @@ class OpenAIClient:
         api_key: str | None = None,
         client_config: EnvConfig | None = None,
     ) -> None:
-        """
-        Initialize the OpenAI client.
-
-        Args:
-            model (str | None): The model name.
-            api_key (str | None): The OpenAI API key.
-            client_config (ClientSettings | None): Optional config object.
-
-        Raises:
-            ClientInitializationError: If necessary arguments are not provided.
-        """
+        """Initialize the OpenAI client."""
         if client_config:
             self.api_key = client_config.api_key
             self.model = client_config.model_name
@@ -53,19 +43,10 @@ class OpenAIClient:
         logger.info(f"OpenAI client initialized with model: {self.model}")
 
     def chat(self, messages: list[BaseMessage]) -> AIMessage:
-        """
-        Send messages to the ChatOpenAI client and get a response.
-
-        Args:
-            messages (List[BaseMessage]): List of messages to send.
-
-        Returns:
-            AIMessage: The response from the model.
-        """
+        """Send messages to the ChatOpenAI client and get a response."""
         logger.debug(f"Chat API call with {len(messages)} messages")
         try:
             response = self.client.invoke(input=messages)
-            # Log token usage if available
             if (
                 hasattr(response, "response_metadata")
                 and "token_usage" in response.response_metadata
@@ -85,18 +66,7 @@ class OpenAIClient:
         tools: list[StructuredTool],
         parallel: bool = False,
     ) -> AIMessage:
-        """
-        Invoke the LLM with structured tools.
-
-        Args:
-            messages (list[BaseMessage]): List of messages to process.
-            tools (list[StructuredTool]): Tools to bind to the LLM.
-            parallel (bool, optional): Whether to run tools in parallel.
-                Defaults to False.
-
-        Returns:
-            AIMessage: The response from the model with potential tool calls.
-        """
+        """Invoke the LLM with structured tools."""
         logger.debug(
             f"Structured output API call with {len(messages)} messages, {len(tools)} tools"
         )

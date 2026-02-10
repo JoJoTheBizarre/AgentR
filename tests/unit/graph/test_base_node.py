@@ -1,6 +1,3 @@
-"""
-Tests for BaseNode abstract class.
-"""
 
 import pytest
 from langchain_core.runnables import RunnableConfig

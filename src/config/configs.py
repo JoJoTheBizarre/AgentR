@@ -16,26 +16,15 @@ class EnvConfig(BaseSettings):
     langfuse_public_key: str
     langfuse_secret_key: str
 
-    # Logging configuration with defaults
-    log_level: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
-    environment: str = "development"  # development, production, staging
+    log_level: str = "INFO"
+    environment: str = "development"
 
     class Config:
         env_file = ".env.dev"
         extra = "allow"
 
-    def model_post_init(self, __context: Any) -> None:
-        """Log configuration loading and validate optional settings."""
-        super().model_post_init(__context)
-        logger.info(f"Configuration loaded from {self.Config.env_file}")
-        logger.info(f"Model: {self.model_name}, API URL: {self.api_url}")
-        logger.info(f"Environment: {self.environment}, Log level: {self.log_level}")
-
-        # Log warnings for potentially missing optional configurations
-        if not self.tavily_api_key:
-            logger.warning("TAVILY_API_KEY not set - research queries will fail")
-        if not self.langfuse_public_key or not self.langfuse_secret_key:
-            logger.warning("Langfuse keys not set - tracing will be disabled")
+def load_env_config():
+    return EnvConfig() #type: ignore
 
 
 class RuntimeConfig(TypedDict):

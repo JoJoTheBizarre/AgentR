@@ -29,21 +29,14 @@ def extract_text_response(response: AIMessage) -> str:
 def format_single_source(idx: int, source: Source) -> str:
     """Format a single source for synthesis output."""
     return f"""[Source {idx + 1}]
-Type: {source['type']}
-Source: {source['source']}
-Content: {source['content']}
+Type: {source["type"]}
+Source: {source["source"]}
+Content: {source["content"]}
 """
 
 
 def format_research_synthesis(research_findings: list[Source]) -> str:
-    """Format research findings using the synthesis template.
-
-    Args:
-        research_findings: List of research sources
-
-    Returns:
-        Formatted synthesis string
-    """
+    """Format research findings using the synthesis template."""
     formatted_sources = "\n".join(
         format_single_source(i, source) for i, source in enumerate(research_findings)
     )
@@ -54,25 +47,15 @@ def format_research_synthesis(research_findings: list[Source]) -> str:
 
 
 def validate_source_structure(item: dict, index: int) -> None:
-    """Validate a single source dictionary structure.
-
-    Args:
-        item: Source dictionary to validate
-        index: Index of source in list (for error messages)
-
-    Raises:
-        ValidationError: If structure is invalid
-    """
+    """Validate a single source dictionary structure."""
     if not isinstance(item, dict):
         raise ValidationError(f"Source at index {index} is not a dictionary")
 
-    # Check required fields
     required_fields = {"source", "content", "type"}
     missing = required_fields - set(item.keys())
     if missing:
         raise ValidationError(f"Source at index {index} missing fields: {missing}")
 
-    # Validate type is valid SourceType
     try:
         SourceType(item["type"])
     except ValueError as e:
@@ -84,7 +67,6 @@ def validate_source_structure(item: dict, index: int) -> None:
             f"Expected one of: {[e.value for e in SourceType]}"
         ) from e
 
-    # Ensure fields are strings
     if not isinstance(item["source"], str):
         raise ValidationError(f"Source at index {index} 'source' field must be string")
     if not isinstance(item["content"], str):
@@ -92,17 +74,7 @@ def validate_source_structure(item: dict, index: int) -> None:
 
 
 def parse_research_results(results_str: str) -> list[dict]:
-    """Parse and validate research results JSON.
-
-    Args:
-        results_str: JSON string containing research results
-
-    Returns:
-        List of validated source dictionaries
-
-    Raises:
-        ValidationError: If JSON is invalid or structure doesn't match Source schema
-    """
+    """Parse and validate research results JSON."""
     try:
         parsed = json.loads(results_str)
     except json.JSONDecodeError as e:

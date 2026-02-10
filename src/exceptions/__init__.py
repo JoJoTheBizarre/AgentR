@@ -1,9 +1,3 @@
-"""
-Exceptions package for AgentR.
-
-All custom exceptions used throughout the AgentR system.
-"""
-
 from .exceptions import (
     AgentExecutionError,
     AgentInitializationError,

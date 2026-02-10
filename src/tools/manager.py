@@ -42,17 +42,7 @@ class ToolManager:
 
     @classmethod
     def get_tool(cls, name: ToolName | str) -> BaseTool:
-        """Get a tool instance by name.
-
-        Args:
-            name: Name of the tool to retrieve
-
-        Returns:
-            Tool instance
-
-        Raises:
-            KeyError: If tool is not registered
-        """
+        """Get a tool instance by name."""
         if not cls._initialized:
             cls.initialize_defaults()
 

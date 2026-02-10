@@ -1,7 +1,3 @@
-"""
-Tests for logging configuration.
-"""
-
 import logging
 import sys
 from unittest.mock import patch
@@ -80,16 +76,13 @@ class TestSetupLogging:
         """Test that setup_logging clears existing handlers."""
         config = EnvConfig()  # type: ignore
 
-        # Create a dummy handler before setup
         root_logger = logging.getLogger()
         dummy_handler = logging.StreamHandler(sys.stderr)
         root_logger.addHandler(dummy_handler)
 
-        # Setup logging should clear it
         setup_logging(config)
 
         assert dummy_handler not in root_logger.handlers
-        # Should have exactly one handler (the one we set up)
         assert len(root_logger.handlers) == 1
         assert isinstance(root_logger.handlers[0], logging.StreamHandler)
 
@@ -97,27 +90,22 @@ class TestSetupLogging:
         """Test that force=True overrides existing configuration."""
         config = EnvConfig()  # type: ignore
 
-        # First setup
         setup_logging(config)
         first_handler = logging.getLogger().handlers[0]
 
-        # Second setup should replace handler
         setup_logging(config)
         second_handler = logging.getLogger().handlers[0]
 
-        # Should be a new handler instance
         assert first_handler is not second_handler
         assert len(logging.getLogger().handlers) == 1
 
     def test_default_config_when_none_provided(self, mock_env_vars):
         """Test that setup_logging works when no config is provided."""
-        # Should not raise any errors
         setup_logging()
 
         root_logger = logging.getLogger()
         assert len(root_logger.handlers) == 1
 
-        # With mock_env_vars, LOG_LEVEL=DEBUG, so root logger should be DEBUG
         config = EnvConfig()  # type: ignore
         assert config.log_level == "DEBUG"
         assert root_logger.level == logging.DEBUG
@@ -137,12 +125,10 @@ class TestGetLogger:
 
     def test_get_logger_without_setup(self, mock_env_vars):
         """Test that get_logger works even without explicit setup_logging call."""
-        # Clear any existing logging configuration
         root_logger = logging.getLogger()
         for handler in root_logger.handlers[:]:
             root_logger.removeHandler(handler)
 
-        # Should still work (setup_logging will be called internally by basicConfig)
         logger = get_logger("another.module")
         assert isinstance(logger, logging.Logger)
 
@@ -152,5 +138,4 @@ class TestGetLogger:
             setup_logging()
             logger = get_logger("test.module")
 
-            # Should have same effective level as root
             assert logger.getEffectiveLevel() == logging.WARNING

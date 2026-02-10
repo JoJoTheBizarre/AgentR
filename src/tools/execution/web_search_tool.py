@@ -8,11 +8,12 @@ from tavily import AsyncTavilyClient, TavilyClient
 
 from src.exceptions import ToolInitializationError
 from src.models.states import Source, SourceType
-
+from src.config import load_env_config
 from ..base.base_tool import BaseTool
 from ..names import ToolName
 
 logger = logging.getLogger(__name__)
+
 
 
 class SearchInput(BaseModel):
@@ -28,7 +29,7 @@ class SearchInput(BaseModel):
 
 def get_async_tavily_client() -> AsyncTavilyClient:
     """Initialize and return an async Tavily client."""
-    api_key = os.getenv("TAVILY_API_KEY")
+    api_key = load_env_config().tavily_api_key
     if not api_key:
         logger.error("TAVILY_API_KEY environment variable is not set")
         raise ToolInitializationError(
@@ -40,7 +41,7 @@ def get_async_tavily_client() -> AsyncTavilyClient:
 
 def get_tavily_client() -> TavilyClient:
     """Initialize and return a Tavily client."""
-    api_key = os.getenv("TAVILY_API_KEY")
+    api_key = load_env_config().tavily_api_key
     if not api_key:
         logger.error("TAVILY_API_KEY environment variable is not set")
         raise ToolInitializationError(
@@ -52,7 +53,7 @@ def get_tavily_client() -> TavilyClient:
 
 def _format_tavily_response(response: dict[str, Any]) -> list[Source]:
     results = response.get("results", [])
-    # Ensure results is a list
+    # making sure results are a list
     if not isinstance(results, list):
         return []
 

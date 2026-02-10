@@ -1,7 +1,3 @@
-"""
-Tests for configuration module.
-"""
-
 import logging
 from unittest.mock import patch
 
@@ -42,9 +38,7 @@ class TestEnvConfig:
             },
             clear=True,
         ):
-            config = EnvConfig()  # type: ignore
 
-            # Check warning was logged
             warning_messages = [
                 rec.message for rec in caplog.records if rec.levelno == logging.WARNING
             ]
@@ -65,9 +59,7 @@ class TestEnvConfig:
             },
             clear=True,
         ):
-            config = EnvConfig()  # type: ignore
 
-            # Check warning was logged
             warning_messages = [
                 rec.message for rec in caplog.records if rec.levelno == logging.WARNING
             ]
@@ -98,7 +90,6 @@ class TestEnvConfig:
         with caplog.at_level(logging.INFO):
             config = EnvConfig()  # type: ignore
 
-            # Check info logs were created
             info_messages = [
                 rec.message for rec in caplog.records if rec.levelno == logging.INFO
             ]
@@ -126,10 +117,8 @@ class TestRuntimeConfig:
         """Test that RuntimeConfig is a TypedDict with expected structure."""
         from src.config.configs import RuntimeConfig
 
-        # This is a type check, but we can verify the structure exists
         config: RuntimeConfig = {"max_iterations": 4}
         assert config["max_iterations"] == 4
 
-        # Should not allow missing keys
         with pytest.raises(KeyError):
             _ = config["invalid_key"]  # type: ignore

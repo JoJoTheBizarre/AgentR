@@ -19,7 +19,7 @@ from .researcher import Researcher
 
 class AgentR:
     def __init__(
-        self, llm_client: OpenAIClient, env_config: EnvConfig, tracing: bool = False
+        self, llm_client: OpenAIClient, env_config: EnvConfig, *, tracing: bool = False
     ) -> None:
         self.client = llm_client
         self.researcher_tools = [ToolName.WEB_SEARCH]

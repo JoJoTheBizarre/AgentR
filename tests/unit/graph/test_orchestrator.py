@@ -1,6 +1,3 @@
-"""
-Tests for OrchestratorNode.
-"""
 
 from unittest.mock import Mock, patch
 

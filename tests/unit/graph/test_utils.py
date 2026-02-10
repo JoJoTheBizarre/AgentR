@@ -1,6 +1,3 @@
-"""
-Tests for graph utility functions.
-"""
 
 import json
 from unittest.mock import Mock
