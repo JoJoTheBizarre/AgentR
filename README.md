@@ -1,4 +1,4 @@
-# AgentR 🤖
+# AgentR - in progress
 
 **Research Agent Using a Plan-and-Execute Architecture**
 

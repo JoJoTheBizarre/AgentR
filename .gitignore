@@ -137,7 +137,7 @@ cython_debug/
 
 # UV
 uv.lock
-
+.env.dev
 # IDEs
 .vscode/
 .idea/

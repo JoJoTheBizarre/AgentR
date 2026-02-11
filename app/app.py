@@ -134,7 +134,6 @@ def chat(
     env_config = EnvConfig()  # type: ignore
     setup_logging(env_config)
 
-    # Display welcome message
     console.print(
         Panel.fit(
             "[bold cyan]AgentR Interactive Chat[/bold cyan]\n"
@@ -297,7 +296,6 @@ def batch(
                 f"Query: {query}\n\nError: {type(e).__name__}: {str(e)}\n\n{'=' * 80}\n"
             )
 
-    # Save responses
     if output_file:
         with open(output_file, "w") as f:
             f.writelines(responses)
