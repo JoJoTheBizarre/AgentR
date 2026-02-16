@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from pydantic_settings import BaseSettings
 
@@ -17,19 +19,21 @@ class EnvConfig(BaseSettings):
     log_level: str = "INFO"
     environment: str = "development"
 
-    class Config:
-        env_file = ".env"
-        extra = "allow"
+    _instance: EnvConfig | None = None
+
+    @classmethod
+    def get_instance(cls) -> EnvConfig:
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
+    model_config = {
+        "env_file": ".env",
+        "extra": "allow",
+    }
 
     def model_post_init(self, __context):
-        """Post-initialization logging and validation."""
         logger.info(f"Configuration loaded: model={self.model_name}, env={self.environment}")
-
-        if not self.tavily_api_key:
-            logger.warning("TAVILY_API_KEY not set - web search will not work")
-
-        if not self.langfuse_public_key or not self.langfuse_secret_key:
-            logger.warning("Langfuse keys not set - tracing disabled")
 
 
 def get_default_runtime_config() -> dict:
